@@ -1,9 +1,9 @@
-import { Users, LayoutDashboard, Settings as SettingsIcon, Building2, LogOut, KeyRound, Calendar, Sparkles, ClipboardList, Banknote, Target } from 'lucide-react';
+import { Users, LayoutDashboard, Settings as SettingsIcon, Building2, LogOut, KeyRound, Calendar, Sparkles, ClipboardList, Banknote, Target, FolderLock } from 'lucide-react';
 import { CompanySettings } from '../types';
 
 interface SidebarProps {
-  currentView: 'dashboard' | 'employees' | 'access-requests' | 'profile' | 'time-off' | 'departments' | 'ai-assistant' | 'recruitment' | 'settings' | 'payroll' | 'performance';
-  onViewChange: (view: 'dashboard' | 'employees' | 'access-requests' | 'time-off' | 'departments' | 'ai-assistant' | 'recruitment' | 'settings' | 'payroll' | 'performance') => void;
+  currentView: 'dashboard' | 'employees' | 'access-requests' | 'profile' | 'time-off' | 'departments' | 'ai-assistant' | 'recruitment' | 'settings' | 'payroll' | 'performance' | 'documents';
+  onViewChange: (view: 'dashboard' | 'employees' | 'access-requests' | 'time-off' | 'departments' | 'ai-assistant' | 'recruitment' | 'settings' | 'payroll' | 'performance' | 'documents') => void;
   onLogout: () => void;
   isAdmin: boolean;
   settings: CompanySettings | null;
@@ -17,6 +17,7 @@ export default function Sidebar({ currentView, onViewChange, onLogout, isAdmin, 
     { id: 'time-off', label: 'Time-Off', icon: Calendar },
     { id: 'payroll', label: 'Payroll', icon: Banknote },
     { id: 'performance', label: 'Performance', icon: Target },
+    { id: 'documents', label: 'Document Vault', icon: FolderLock },
     { id: 'departments', label: 'Departments', icon: Building2 },
     { id: 'ai-assistant', label: 'AI Assistant', icon: Sparkles },
     ...(isAdmin ? [{ id: 'access-requests', label: 'Access Requests', icon: KeyRound }] : []),

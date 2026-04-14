@@ -1,10 +1,12 @@
 export type EmployeeStatus = 'Active' | 'On Leave' | 'Terminated';
 
-export interface EmployeeDocument {
+export interface VaultDocument {
   id: string;
+  employeeId: string;
   name: string;
-  url: string;
+  dataUrl: string; // Base64 data
   type: string;
+  category: 'Contract' | 'ID' | 'Tax Document' | 'Other';
   uploadedAt: string;
   size: number;
 }
@@ -21,7 +23,6 @@ export interface Employee {
   joinDate: string;
   avatarUrl: string;
   ownerId?: string;
-  documents?: EmployeeDocument[];
   phone?: string;
   location?: string;
   bio?: string;
