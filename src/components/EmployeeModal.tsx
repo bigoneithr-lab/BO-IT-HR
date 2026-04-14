@@ -13,6 +13,7 @@ interface EmployeeModalProps {
 
 export default function EmployeeModal({ isOpen, onClose, employee, departments, onSave }: EmployeeModalProps) {
   const [formData, setFormData] = useState<Partial<Employee>>({
+    employeeId: '',
     firstName: '',
     lastName: '',
     email: '',
@@ -84,15 +85,27 @@ export default function EmployeeModal({ isOpen, onClose, employee, departments, 
               </div>
             </div>
 
-            <div>
-              <label className="block text-[12px] font-medium text-[#718096] uppercase tracking-[0.5px] mb-1">Email</label>
-              <input 
-                required
-                type="email" 
-                value={formData.email}
-                onChange={e => setFormData({...formData, email: e.target.value})}
-                className="w-full px-3 py-2 border border-[#E2E8F0] rounded-[4px] bg-[#F7FAFC] text-[14px] focus:outline-none focus:ring-1 focus:ring-[#4A90E2] focus:border-[#4A90E2] transition-colors"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[12px] font-medium text-[#718096] uppercase tracking-[0.5px] mb-1">Employee ID</label>
+                <input 
+                  type="text" 
+                  value={formData.employeeId || ''}
+                  onChange={e => setFormData({...formData, employeeId: e.target.value})}
+                  className="w-full px-3 py-2 border border-[#E2E8F0] rounded-[4px] bg-[#F7FAFC] text-[14px] focus:outline-none focus:ring-1 focus:ring-[#4A90E2] focus:border-[#4A90E2] transition-colors"
+                  placeholder="e.g. EMP-001"
+                />
+              </div>
+              <div>
+                <label className="block text-[12px] font-medium text-[#718096] uppercase tracking-[0.5px] mb-1">Email</label>
+                <input 
+                  required
+                  type="email" 
+                  value={formData.email}
+                  onChange={e => setFormData({...formData, email: e.target.value})}
+                  className="w-full px-3 py-2 border border-[#E2E8F0] rounded-[4px] bg-[#F7FAFC] text-[14px] focus:outline-none focus:ring-1 focus:ring-[#4A90E2] focus:border-[#4A90E2] transition-colors"
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">

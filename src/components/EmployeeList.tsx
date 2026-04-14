@@ -130,6 +130,7 @@ export default function EmployeeList({ employees, departments, onViewProfile }: 
                       <div>
                         <div className="font-medium text-[14px] text-[#333]">{employee.firstName} {employee.lastName}</div>
                         <div className="text-[12px] text-[#718096] flex items-center gap-1 mt-0.5">
+                          {employee.employeeId && <span className="font-mono bg-[#EDF2F7] px-1 rounded mr-1">{employee.employeeId}</span>}
                           <Mail className="w-3 h-3" />
                           {employee.email}
                         </div>

@@ -11,12 +11,19 @@ import AccessRequests from './components/AccessRequests';
 import EmployeeProfile from './components/EmployeeProfile';
 import LeaveManagement from './components/LeaveManagement';
 import Departments from './components/Departments';
-import { Employee, Department } from './types';
+import AIAssistant from './components/AIAssistant';
+import RecruitmentBoard from './components/RecruitmentBoard';
+import Settings from './components/Settings';
+import Payroll from './components/Payroll';
+import Performance from './components/Performance';
+import { Employee, Department, Applicant, CompanySettings } from './types';
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<'dashboard' | 'employees' | 'access-requests' | 'profile' | 'time-off' | 'departments'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'employees' | 'access-requests' | 'profile' | 'time-off' | 'departments' | 'ai-assistant' | 'recruitment' | 'settings' | 'payroll' | 'performance'>('dashboard');
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [applicants, setApplicants] = useState<Applicant[]>([]);
+  const [companySettings, setCompanySettings] = useState<CompanySettings | null>(null);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
@@ -112,9 +119,43 @@ export default function App() {
       }
     );
 
+    const unsubscribeApp = onSnapshot(
+      collection(db, 'applicants'),
+      (snapshot) => {
+        const apps: Applicant[] = [];
+        snapshot.forEach((doc) => {
+          apps.push({ id: doc.id, ...doc.data() } as Applicant);
+        });
+        setApplicants(apps);
+      },
+      (error) => {
+        handleFirestoreError(error, OperationType.LIST, 'applicants');
+      }
+    );
+
+    const unsubscribeSettings = onSnapshot(
+      doc(db, 'settings', 'company'),
+      (docSnap) => {
+        if (docSnap.exists()) {
+          setCompanySettings(docSnap.data() as CompanySettings);
+        } else {
+          setCompanySettings({
+            companyName: 'BO-IT HR',
+            defaultCasualDays: 14,
+            defaultSickDays: 10
+          });
+        }
+      },
+      (error) => {
+        handleFirestoreError(error, OperationType.GET, 'settings/company');
+      }
+    );
+
     return () => {
       unsubscribeEmp();
       unsubscribeDept();
+      unsubscribeApp();
+      unsubscribeSettings();
     };
   }, [isAuthReady, user, appUserStatus]);
 
@@ -159,7 +200,7 @@ export default function App() {
     return (
       <div className="flex h-screen items-center justify-center bg-[#F0F2F5] font-sans text-[#333]">
         <div className="bg-[#FFFFFF] p-8 rounded-[8px] shadow-[0_4px_12px_rgba(0,0,0,0.15)] max-w-md w-full text-center">
-          <h1 className="text-[24px] font-bold mb-2">BO-IT HR</h1>
+          <h1 className="text-[24px] font-bold mb-2">{companySettings?.companyName || 'BO-IT HR'}</h1>
           <p className="text-[#718096] mb-6 text-[14px]">Please sign in to access the CRM.</p>
           {authError && <p className="text-[#C53030] bg-[#FFF5F5] p-3 rounded-[4px] mb-4 text-[13px]">{authError}</p>}
           <button 
@@ -218,15 +259,21 @@ export default function App() {
         onViewChange={setCurrentView} 
         onLogout={handleLogout} 
         isAdmin={appUserStatus === 'admin'}
+        settings={companySettings}
       />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Header user={user} />
         <main className="flex-1 overflow-y-auto p-8">
-          {currentView === 'dashboard' && <Dashboard employees={employees} />}
+          {currentView === 'dashboard' && <Dashboard employees={employees} departments={departments} />}
           {currentView === 'employees' && <EmployeeList employees={employees} departments={departments} onViewProfile={handleViewProfile} />}
+          {currentView === 'recruitment' && <RecruitmentBoard applicants={applicants} departments={departments} />}
           {currentView === 'access-requests' && appUserStatus === 'admin' && <AccessRequests />}
           {currentView === 'time-off' && <LeaveManagement employees={employees} isAdmin={appUserStatus === 'admin'} />}
           {currentView === 'departments' && <Departments employees={employees} departments={departments} isAdmin={appUserStatus === 'admin'} />}
+          {currentView === 'ai-assistant' && <AIAssistant />}
+          {currentView === 'settings' && <Settings settings={companySettings} isAdmin={appUserStatus === 'admin'} />}
+          {currentView === 'payroll' && <Payroll employees={employees} isAdmin={appUserStatus === 'admin'} />}
+          {currentView === 'performance' && <Performance employees={employees} isAdmin={appUserStatus === 'admin'} />}
           {currentView === 'profile' && selectedEmployee && (
             <EmployeeProfile 
               employee={selectedEmployee} 

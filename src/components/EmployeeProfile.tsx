@@ -107,7 +107,10 @@ export default function EmployeeProfile({ employee, onBack }: EmployeeProfilePro
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-[24px] font-bold text-[#333]">{employee.firstName} {employee.lastName}</h2>
-                <div className="text-[16px] text-[#718096] mt-1">{employee.role}</div>
+                <div className="text-[16px] text-[#718096] mt-1">
+                  {employee.role} 
+                  {employee.employeeId && <span className="ml-2 px-2 py-0.5 bg-[#EDF2F7] text-[#4A5568] rounded text-[12px] font-medium align-middle">ID: {employee.employeeId}</span>}
+                </div>
               </div>
               <span className={`px-[12px] py-[6px] inline-flex text-[12px] font-semibold rounded-[12px] uppercase ${getStatusColor(employee.status)}`}>
                 {employee.status}

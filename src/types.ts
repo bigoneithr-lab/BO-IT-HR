@@ -11,6 +11,7 @@ export interface EmployeeDocument {
 
 export interface Employee {
   id: string;
+  employeeId?: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -26,7 +27,7 @@ export interface Employee {
   bio?: string;
 }
 
-export type LeaveType = 'Vacation' | 'Sick' | 'Personal' | 'Other';
+export type LeaveType = 'Casual' | 'Sick' | 'Personal' | 'Other';
 export type LeaveStatus = 'Pending' | 'Approved' | 'Denied';
 
 export interface LeaveRequest {
@@ -46,4 +47,70 @@ export interface Department {
   name: string;
   description?: string;
   managerId?: string;
+}
+
+export type ApplicantStage = 'Applied' | 'Interviewing' | 'Offered' | 'Hired' | 'Rejected';
+
+export interface Applicant {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: string;
+  stage: ApplicantStage;
+  appliedDate: string;
+  phone?: string;
+  resumeUrl?: string;
+  notes?: string;
+}
+
+export interface CompanySettings {
+  companyName: string;
+  logoUrl?: string;
+  defaultCasualDays: number;
+  defaultSickDays: number;
+}
+
+export interface Payslip {
+  id: string;
+  employeeId: string;
+  month: string;
+  baseSalary: number;
+  allowances: {
+    attendance: number;
+    dressCode: number;
+    dinner: number;
+    teamSales: number;
+    ownSales: number;
+  };
+  deductions: {
+    absences: number;
+    absenceDays: number;
+  };
+  netSalary: number;
+  status: 'Draft' | 'Paid';
+  generatedAt: string;
+  generatedBy: string;
+}
+
+export interface Goal {
+  id: string;
+  employeeId: string;
+  title: string;
+  description?: string;
+  status: 'Not Started' | 'In Progress' | 'Completed' | 'Missed';
+  dueDate: string;
+  createdAt: string;
+}
+
+export interface PerformanceReview {
+  id: string;
+  employeeId: string;
+  reviewerId: string;
+  period: 'Q1' | 'Q2' | 'Q3' | 'Q4' | 'Annual';
+  year: number;
+  rating: number;
+  feedback: string;
+  status: 'Draft' | 'Published';
+  createdAt: string;
 }

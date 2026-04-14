@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Calendar, Plus, Check, X, Clock } from 'lucide-react';
+import { Calendar, Plus, Check, X, Clock, AlertTriangle } from 'lucide-react';
 import { collection, onSnapshot, addDoc, updateDoc, doc, query, orderBy } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { handleFirestoreError, OperationType } from '../lib/firebase-utils';
@@ -16,7 +16,7 @@ export default function LeaveManagement({ employees, isAdmin }: LeaveManagementP
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState<Partial<LeaveRequest>>({
     employeeId: '',
-    type: 'Vacation',
+    type: 'Casual',
     startDate: '',
     endDate: '',
     reason: ''
@@ -43,7 +43,7 @@ export default function LeaveManagement({ employees, isAdmin }: LeaveManagementP
         appliedAt: new Date().toISOString()
       });
       setIsModalOpen(false);
-      setFormData({ employeeId: '', type: 'Vacation', startDate: '', endDate: '', reason: '' });
+      setFormData({ employeeId: '', type: 'Casual', startDate: '', endDate: '', reason: '' });
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, 'leaveRequests');
     }
@@ -67,6 +67,14 @@ export default function LeaveManagement({ employees, isAdmin }: LeaveManagementP
       default: return <span className="px-[10px] py-[4px] inline-flex text-[11px] font-semibold rounded-[12px] uppercase bg-[#FEFCBF] text-[#B7791F] flex items-center gap-1"><Clock className="w-3 h-3"/> Pending</span>;
     }
   };
+
+  const selectedEmployee = employees.find(e => e.id === formData.employeeId);
+  let isProbation = false;
+  if (selectedEmployee) {
+    const joinDate = new Date(selectedEmployee.joinDate);
+    const probationEndDate = new Date(joinDate.setMonth(joinDate.getMonth() + 6));
+    isProbation = new Date() < probationEndDate;
+  }
 
   return (
     <motion.div 
@@ -100,6 +108,13 @@ export default function LeaveManagement({ employees, isAdmin }: LeaveManagementP
             <tbody className="bg-white">
               {requests.map(req => {
                 const emp = employees.find(e => e.id === req.employeeId);
+                let reqIsProbation = false;
+                if (emp) {
+                  const joinDate = new Date(emp.joinDate);
+                  const probationEndDate = new Date(joinDate.setMonth(joinDate.getMonth() + 6));
+                  reqIsProbation = new Date(req.appliedAt) < probationEndDate;
+                }
+                
                 return (
                   <tr key={req.id} className="hover:bg-[#FAFBFC] transition-colors">
                     <td className="px-6 py-4 border-b border-[#F0F2F5]">
@@ -116,7 +131,14 @@ export default function LeaveManagement({ employees, isAdmin }: LeaveManagementP
                       )}
                     </td>
                     <td className="px-6 py-4 border-b border-[#F0F2F5]">
-                      <div className="text-[14px] text-[#333] font-medium">{req.type}</div>
+                      <div className="text-[14px] text-[#333] font-medium flex items-center gap-2">
+                        {req.type}
+                        {reqIsProbation && (
+                          <span className="text-[10px] bg-[#FFF5F5] text-[#C53030] px-1.5 py-0.5 rounded border border-[#FED7D7]" title="Requested during probation (Unpaid)">
+                            Probation
+                          </span>
+                        )}
+                      </div>
                       {req.reason && <div className="text-[12px] text-[#718096] mt-0.5 truncate max-w-[200px]">{req.reason}</div>}
                     </td>
                     <td className="px-6 py-4 border-b border-[#F0F2F5]">
@@ -205,6 +227,16 @@ export default function LeaveManagement({ employees, isAdmin }: LeaveManagementP
                   </select>
                 </div>
 
+                {isProbation && (
+                  <div className="bg-[#FFF5F5] border border-[#FED7D7] rounded-[4px] p-3 flex gap-3 items-start">
+                    <AlertTriangle className="w-5 h-5 text-[#C53030] shrink-0 mt-0.5" />
+                    <div className="text-[13px] text-[#C53030]">
+                      <strong>Probation Period Active</strong>
+                      <p className="mt-1">This employee is within their 6-month probation period. Any absence will be deducted from their salary (1 day absent = 1 day salary cut).</p>
+                    </div>
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-[12px] font-medium text-[#718096] uppercase tracking-[0.5px] mb-1">Leave Type</label>
                   <select 
@@ -213,7 +245,7 @@ export default function LeaveManagement({ employees, isAdmin }: LeaveManagementP
                     onChange={e => setFormData({...formData, type: e.target.value as LeaveType})}
                     className="w-full px-3 py-2 border border-[#E2E8F0] rounded-[4px] bg-[#F7FAFC] text-[14px] focus:outline-none focus:ring-1 focus:ring-[#4A90E2] focus:border-[#4A90E2] transition-colors"
                   >
-                    <option value="Vacation">Vacation</option>
+                    <option value="Casual">Casual Leave</option>
                     <option value="Sick">Sick Leave</option>
                     <option value="Personal">Personal Leave</option>
                     <option value="Other">Other</option>

@@ -38,5 +38,29 @@ service cloud.firestore {
     match /departments/{departmentId} {
       allow read, write: if isApproved();
     }
+
+    match /applicants/{applicantId} {
+      allow read, write: if isApproved();
+    }
+
+    match /settings/{document} {
+      allow read: if isApproved();
+      allow write: if isAdmin();
+    }
+
+    match /payslips/{payslipId} {
+      allow read: if isApproved();
+      allow write: if isAdmin();
+    }
+
+    match /goals/{goalId} {
+      allow read: if isApproved();
+      allow write: if isAdmin();
+    }
+
+    match /reviews/{reviewId} {
+      allow read: if isApproved();
+      allow write: if isAdmin();
+    }
   }
 }
