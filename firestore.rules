@@ -1,0 +1,42 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.email == "bigoneithr@gmail.com" && request.auth.token.email_verified == true;
+    }
+
+    function isApproved() {
+      return isAdmin() || (isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'approved');
+    }
+
+    match /users/{userId} {
+      allow read: if isAuthenticated() && request.auth.uid == userId || isAdmin();
+      allow create: if isAuthenticated() && request.auth.uid == userId
+                    && request.resource.data.status == 'pending';
+      allow update: if isAdmin() ||
+                    (isAuthenticated() && request.auth.uid == userId
+                     && request.resource.data.status == 'approved'
+                     && request.resource.data.submittedCode == resource.data.accessCode
+                     && request.resource.data.role == resource.data.role);
+      allow delete: if isAdmin();
+    }
+
+    match /employees/{employeeId} {
+      allow read, write: if isApproved();
+    }
+
+    match /leaveRequests/{requestId} {
+      allow read, write: if isApproved();
+    }
+
+    match /departments/{departmentId} {
+      allow read, write: if isApproved();
+    }
+  }
+}

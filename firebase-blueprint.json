@@ -1,0 +1,60 @@
+{
+  "entities": {
+    "Employee": {
+      "title": "Employee",
+      "description": "Represents an employee in the CRM.",
+      "type": "object",
+      "properties": {
+        "firstName": {
+          "type": "string",
+          "description": "First name of the employee"
+        },
+        "lastName": {
+          "type": "string",
+          "description": "Last name of the employee"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Email address of the employee"
+        },
+        "role": {
+          "type": "string",
+          "description": "Job title or role"
+        },
+        "department": {
+          "type": "string",
+          "description": "Department the employee belongs to"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Active", "On Leave", "Terminated"],
+          "description": "Current employment status"
+        },
+        "joinDate": {
+          "type": "string",
+          "format": "date",
+          "description": "Date the employee joined"
+        },
+        "avatarUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL to the employee's avatar image"
+        },
+        "ownerId": {
+          "type": "string",
+          "description": "The UID of the user who created this record"
+        }
+      },
+      "required": ["firstName", "lastName", "email", "role", "department", "status", "joinDate", "ownerId"]
+    }
+  },
+  "firestore": {
+    "/employees/{employeeId}": {
+      "schema": {
+        "$ref": "#/entities/Employee"
+      },
+      "description": "Stores employee records."
+    }
+  }
+}
