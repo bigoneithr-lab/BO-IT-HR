@@ -10,9 +10,10 @@ interface AttendanceProps {
   employees: Employee[];
   isAdmin: boolean;
   settings: CompanySettings | null;
+  currentUserEmail?: string | null;
 }
 
-export default function Attendance({ employees, isAdmin, settings }: AttendanceProps) {
+export default function Attendance({ employees, isAdmin, settings, currentUserEmail }: AttendanceProps) {
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [attendance, setAttendance] = useState<Record<string, AttendanceRecord>>({});
 
@@ -93,6 +94,43 @@ export default function Attendance({ employees, isAdmin, settings }: AttendanceP
     }
   };
 
+  const currentEmployee = employees.find(emp => emp.email === currentUserEmail);
+  const currentEmployeeRecord = currentEmployee ? attendance[currentEmployee.id] : null;
+
+  const handleSelfCheckIn = async () => {
+    if (!currentEmployee) return;
+    
+    const now = new Date();
+    const checkInTime = now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
+    const todayDate = now.toISOString().split('T')[0];
+    
+    const recordId = `${currentEmployee.id}_${todayDate}`;
+    const month = todayDate.substring(0, 7);
+    const lateMinutes = calculateLateMinutes(checkInTime);
+    const isLate = lateMinutes > 0;
+    
+    try {
+      await setDoc(doc(db, 'attendance', recordId), {
+        employeeId: currentEmployee.id,
+        date: todayDate,
+        month,
+        checkIn: checkInTime,
+        isLate,
+        lateMinutes,
+        status: 'Present',
+        markedBy: currentEmployee.email,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+      
+      // If they are checking in on a different date than currently selected, switch to today
+      if (selectedDate !== todayDate) {
+        setSelectedDate(todayDate);
+      }
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `attendance/${recordId}`);
+    }
+  };
+
   const markAllPresent = async () => {
     if (!isAdmin) return;
     if (!window.confirm(`Mark all unmarked employees as Present for ${selectedDate}?`)) return;
@@ -146,6 +184,15 @@ export default function Attendance({ employees, isAdmin, settings }: AttendanceP
           <p className="text-[14px] text-[#718096] mt-1">Track daily attendance to automatically sync with payroll.</p>
         </div>
         <div className="flex items-center gap-4">
+          {currentEmployee && selectedDate === new Date().toISOString().split('T')[0] && !currentEmployeeRecord?.checkIn && (
+            <button 
+              onClick={handleSelfCheckIn}
+              className="bg-[#48BB78] hover:bg-[#38A169] text-white px-4 py-2 rounded-[4px] text-[14px] font-medium flex items-center gap-2 transition-colors mr-2"
+            >
+              <Clock className="w-4 h-4" />
+              Check In Now
+            </button>
+          )}
           <div className="flex items-center gap-2 bg-white border border-[#E2E8F0] rounded-[4px] px-3 py-2">
             <CalendarIcon className="w-4 h-4 text-[#718096]" />
             <input 
@@ -180,7 +227,7 @@ export default function Attendance({ employees, isAdmin, settings }: AttendanceP
               </tr>
             </thead>
             <tbody className="bg-white">
-              {employees.map(emp => {
+              {(isAdmin ? employees : employees.filter(e => e.email === currentUserEmail)).map(emp => {
                 const record = attendance[emp.id];
                 return (
                   <tr key={emp.id} className="hover:bg-[#FAFBFC] transition-colors">

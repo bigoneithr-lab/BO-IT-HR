@@ -9,9 +9,10 @@ import { Employee, VaultDocument } from '../types';
 interface DocumentVaultProps {
   employees: Employee[];
   isAdmin: boolean;
+  currentUserEmail?: string | null;
 }
 
-export default function DocumentVault({ employees, isAdmin }: DocumentVaultProps) {
+export default function DocumentVault({ employees, isAdmin, currentUserEmail }: DocumentVaultProps) {
   const [documents, setDocuments] = useState<VaultDocument[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -112,7 +113,7 @@ export default function DocumentVault({ employees, isAdmin }: DocumentVaultProps
   const filteredDocuments = documents.filter(doc => {
     // If not admin, only show their own documents
     if (!isAdmin) {
-      const currentUserEmp = employees.find(e => e.email === auth.currentUser?.email);
+      const currentUserEmp = employees.find(e => e.email === currentUserEmail);
       if (!currentUserEmp || doc.employeeId !== currentUserEmp.id) return false;
     }
     
@@ -196,7 +197,7 @@ export default function DocumentVault({ employees, isAdmin }: DocumentVaultProps
                         >
                           <Download className="w-4 h-4" />
                         </a>
-                        {(isAdmin || doc.employeeId === employees.find(e => e.email === auth.currentUser?.email)?.id) && (
+                        {(isAdmin || doc.employeeId === employees.find(e => e.email === currentUserEmail)?.id) && (
                           <button 
                             onClick={() => handleDelete(doc.id, doc.name)}
                             className="p-1.5 text-[#718096] hover:text-[#C53030] hover:bg-[#FFF5F5] rounded-[4px] transition-colors"
@@ -293,7 +294,7 @@ export default function DocumentVault({ employees, isAdmin }: DocumentVaultProps
                     ref={fileInputRef}
                     onChange={(e) => {
                       if (!isAdmin) {
-                        const currentUserEmp = employees.find(emp => emp.email === auth.currentUser?.email);
+                        const currentUserEmp = employees.find(emp => emp.email === currentUserEmail);
                         if (currentUserEmp) {
                           setFormData(prev => ({ ...prev, employeeId: currentUserEmp.id }));
                         }

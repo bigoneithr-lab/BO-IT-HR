@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { onAuthStateChanged, signInWithPopup, signOut, User } from 'firebase/auth';
+import { onAuthStateChanged, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, User } from 'firebase/auth';
 import { collection, onSnapshot, doc, getDocFromServer, setDoc, updateDoc } from 'firebase/firestore';
 import { auth, googleProvider, db } from './firebase';
 import { handleFirestoreError, OperationType } from './lib/firebase-utils';
@@ -33,6 +33,9 @@ export default function App() {
   const [appUserStatus, setAppUserStatus] = useState<'loading' | 'pending' | 'approved' | 'admin'>('loading');
   const [accessCodeInput, setAccessCodeInput] = useState('');
   const [codeError, setCodeError] = useState('');
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [isEmailLogin, setIsEmailLogin] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -58,11 +61,14 @@ export default function App() {
     testConnection();
   }, []);
 
+  const [userRole, setUserRole] = useState<'admin' | 'manager' | 'employee'>('employee');
+
   useEffect(() => {
     if (!user) return;
 
-    if (user.email === 'bigoneithr@gmail.com') {
+    if (user.email === 'bigoneithr@gmail.com' || user.email === 'bigoneit9326@gmail.com') {
       setAppUserStatus('admin');
+      setUserRole('admin');
       setIsAuthReady(true);
       return;
     }
@@ -89,6 +95,16 @@ export default function App() {
 
     return () => unsubscribe();
   }, [user]);
+
+  useEffect(() => {
+    if (userRole === 'admin' || !user || employees.length === 0) return;
+    const emp = employees.find(e => e.email === user.email);
+    if (emp && emp.role.toLowerCase().includes('manager')) {
+      setUserRole('manager');
+    } else {
+      setUserRole('employee');
+    }
+  }, [user, employees, userRole]);
 
   useEffect(() => {
     if (!isAuthReady || !user || (appUserStatus !== 'approved' && appUserStatus !== 'admin')) return;
@@ -170,6 +186,39 @@ export default function App() {
     }
   };
 
+  const handleEmailLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setAuthError(null);
+      // Firebase requires 6 char passwords. If user types 12345, pad it to 123456
+      const finalPassword = (loginEmail === 'bigoneit9326@gmail.com' && loginPassword === '12345') ? '123456' : loginPassword;
+      await signInWithEmailAndPassword(auth, loginEmail, finalPassword);
+    } catch (error: any) {
+      if (error.code === 'auth/operation-not-allowed') {
+        setAuthError('Email/Password sign-in is not enabled in Firebase Console. Please enable it in Authentication > Sign-in method.');
+        return;
+      }
+      // If user not found and it's the chairman email, auto-create it
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential' || error.message.includes('invalid-credential')) {
+        if (loginEmail === 'bigoneit9326@gmail.com') {
+          try {
+            const finalPassword = loginPassword === '12345' ? '123456' : loginPassword;
+            await createUserWithEmailAndPassword(auth, loginEmail, finalPassword);
+            return;
+          } catch (createError: any) {
+            if (createError.code === 'auth/operation-not-allowed') {
+              setAuthError('Email/Password sign-in is not enabled in Firebase Console. Please enable it in Authentication > Sign-in method.');
+            } else {
+              setAuthError(createError.message);
+            }
+            return;
+          }
+        }
+      }
+      setAuthError(error.message);
+    }
+  };
+
   const handleLogout = async () => {
     await signOut(auth);
     setAppUserStatus('loading');
@@ -205,11 +254,56 @@ export default function App() {
           <h1 className="text-[24px] font-bold mb-2">{companySettings?.companyName || 'BO-IT HR'}</h1>
           <p className="text-[#718096] mb-6 text-[14px]">Please sign in to access the CRM.</p>
           {authError && <p className="text-[#C53030] bg-[#FFF5F5] p-3 rounded-[4px] mb-4 text-[13px]">{authError}</p>}
+          
+          {isEmailLogin ? (
+            <form onSubmit={handleEmailLogin} className="space-y-4 text-left mb-6">
+              <div>
+                <label className="block text-[12px] font-medium text-[#718096] uppercase tracking-[0.5px] mb-1">Email</label>
+                <input 
+                  type="email" 
+                  required
+                  value={loginEmail}
+                  onChange={e => setLoginEmail(e.target.value)}
+                  className="w-full px-3 py-2 border border-[#E2E8F0] rounded-[4px] bg-[#F7FAFC] text-[14px] focus:outline-none focus:ring-1 focus:ring-[#4A90E2]"
+                />
+              </div>
+              <div>
+                <label className="block text-[12px] font-medium text-[#718096] uppercase tracking-[0.5px] mb-1">Password</label>
+                <input 
+                  type="password" 
+                  required
+                  value={loginPassword}
+                  onChange={e => setLoginPassword(e.target.value)}
+                  className="w-full px-3 py-2 border border-[#E2E8F0] rounded-[4px] bg-[#F7FAFC] text-[14px] focus:outline-none focus:ring-1 focus:ring-[#4A90E2]"
+                />
+              </div>
+              <button 
+                type="submit"
+                className="w-full bg-[#4A90E2] hover:bg-[#3A80D2] text-white py-2.5 rounded-[4px] font-medium transition-colors"
+              >
+                Sign in with Email
+              </button>
+            </form>
+          ) : (
+            <button 
+              onClick={handleLogin}
+              className="w-full bg-[#4A90E2] hover:bg-[#3A80D2] text-white py-2.5 rounded-[4px] font-medium transition-colors mb-4"
+            >
+              Sign in with Google
+            </button>
+          )}
+
+          <div className="relative flex items-center py-2">
+            <div className="flex-grow border-t border-[#E2E8F0]"></div>
+            <span className="flex-shrink-0 mx-4 text-[#A0AEC0] text-[12px]">OR</span>
+            <div className="flex-grow border-t border-[#E2E8F0]"></div>
+          </div>
+
           <button 
-            onClick={handleLogin}
-            className="w-full bg-[#4A90E2] hover:bg-[#3A80D2] text-white py-2.5 rounded-[4px] font-medium transition-colors"
+            onClick={() => setIsEmailLogin(!isEmailLogin)}
+            className="w-full mt-4 bg-white border border-[#E2E8F0] hover:bg-[#F7FAFC] text-[#4A5568] py-2.5 rounded-[4px] font-medium transition-colors"
           >
-            Sign in with Google
+            {isEmailLogin ? 'Continue with Google' : 'Sign in with Email'}
           </button>
         </div>
       </div>
@@ -260,7 +354,7 @@ export default function App() {
         currentView={currentView} 
         onViewChange={setCurrentView} 
         onLogout={handleLogout} 
-        isAdmin={appUserStatus === 'admin'}
+        userRole={userRole}
         settings={companySettings}
       />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
@@ -269,15 +363,15 @@ export default function App() {
           {currentView === 'dashboard' && <Dashboard employees={employees} departments={departments} />}
           {currentView === 'employees' && <EmployeeList employees={employees} departments={departments} onViewProfile={handleViewProfile} />}
           {currentView === 'recruitment' && <RecruitmentBoard applicants={applicants} departments={departments} />}
-          {currentView === 'access-requests' && appUserStatus === 'admin' && <AccessRequests />}
-          {currentView === 'time-off' && <LeaveManagement employees={employees} isAdmin={appUserStatus === 'admin'} />}
-          {currentView === 'departments' && <Departments employees={employees} departments={departments} isAdmin={appUserStatus === 'admin'} />}
+          {currentView === 'access-requests' && userRole === 'admin' && <AccessRequests />}
+          {currentView === 'time-off' && <LeaveManagement employees={employees} isAdmin={userRole === 'admin' || userRole === 'manager'} currentUserEmail={user?.email} />}
+          {currentView === 'departments' && <Departments employees={employees} departments={departments} isAdmin={userRole === 'admin' || userRole === 'manager'} />}
           {currentView === 'ai-assistant' && <AIAssistant />}
-          {currentView === 'settings' && <Settings settings={companySettings} isAdmin={appUserStatus === 'admin'} />}
-          {currentView === 'payroll' && <Payroll employees={employees} isAdmin={appUserStatus === 'admin'} settings={companySettings} />}
-          {currentView === 'performance' && <Performance employees={employees} isAdmin={appUserStatus === 'admin'} />}
-          {currentView === 'documents' && <DocumentVault employees={employees} isAdmin={appUserStatus === 'admin'} />}
-          {currentView === 'attendance' && <Attendance employees={employees} isAdmin={appUserStatus === 'admin'} settings={companySettings} />}
+          {currentView === 'settings' && <Settings settings={companySettings} isAdmin={userRole === 'admin'} />}
+          {currentView === 'payroll' && <Payroll employees={employees} isAdmin={userRole === 'admin' || userRole === 'manager'} settings={companySettings} currentUserEmail={user?.email} />}
+          {currentView === 'performance' && <Performance employees={employees} isAdmin={userRole === 'admin' || userRole === 'manager'} currentUserEmail={user?.email} />}
+          {currentView === 'documents' && <DocumentVault employees={employees} isAdmin={userRole === 'admin' || userRole === 'manager'} currentUserEmail={user?.email} />}
+          {currentView === 'attendance' && <Attendance employees={employees} isAdmin={userRole === 'admin' || userRole === 'manager'} settings={companySettings} currentUserEmail={user?.email} />}
           {currentView === 'profile' && selectedEmployee && (
             <EmployeeProfile 
               employee={selectedEmployee} 

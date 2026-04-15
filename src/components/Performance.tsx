@@ -9,9 +9,10 @@ import { Employee, Goal, PerformanceReview } from '../types';
 interface PerformanceProps {
   employees: Employee[];
   isAdmin: boolean;
+  currentUserEmail?: string | null;
 }
 
-export default function Performance({ employees, isAdmin }: PerformanceProps) {
+export default function Performance({ employees, isAdmin, currentUserEmail }: PerformanceProps) {
   const [activeTab, setActiveTab] = useState<'goals' | 'reviews'>('goals');
   const [goals, setGoals] = useState<Goal[]>([]);
   const [reviews, setReviews] = useState<PerformanceReview[]>([]);
@@ -177,7 +178,10 @@ export default function Performance({ employees, isAdmin }: PerformanceProps) {
                 </tr>
               </thead>
               <tbody className="bg-white">
-                {goals.map(goal => {
+                {(isAdmin ? goals : goals.filter(goal => {
+                  const emp = employees.find(e => e.id === goal.employeeId);
+                  return emp?.email === currentUserEmail;
+                })).map(goal => {
                   const emp = employees.find(e => e.id === goal.employeeId);
                   return (
                     <tr key={goal.id} className="hover:bg-[#FAFBFC] transition-colors">
@@ -244,7 +248,10 @@ export default function Performance({ employees, isAdmin }: PerformanceProps) {
                 </tr>
               </thead>
               <tbody className="bg-white">
-                {reviews.map(review => {
+                {(isAdmin ? reviews : reviews.filter(review => {
+                  const emp = employees.find(e => e.id === review.employeeId);
+                  return emp?.email === currentUserEmail;
+                })).map(review => {
                   const emp = employees.find(e => e.id === review.employeeId);
                   return (
                     <tr key={review.id} className="hover:bg-[#FAFBFC] transition-colors">

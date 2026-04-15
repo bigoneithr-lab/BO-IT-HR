@@ -9,9 +9,10 @@ import { Employee, LeaveRequest, LeaveType } from '../types';
 interface LeaveManagementProps {
   employees: Employee[];
   isAdmin: boolean;
+  currentUserEmail?: string | null;
 }
 
-export default function LeaveManagement({ employees, isAdmin }: LeaveManagementProps) {
+export default function LeaveManagement({ employees, isAdmin, currentUserEmail }: LeaveManagementProps) {
   const [requests, setRequests] = useState<LeaveRequest[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState<Partial<LeaveRequest>>({
@@ -21,6 +22,15 @@ export default function LeaveManagement({ employees, isAdmin }: LeaveManagementP
     endDate: '',
     reason: ''
   });
+
+  useEffect(() => {
+    if (!isAdmin && currentUserEmail) {
+      const emp = employees.find(e => e.email === currentUserEmail);
+      if (emp) {
+        setFormData(prev => ({ ...prev, employeeId: emp.id }));
+      }
+    }
+  }, [isAdmin, currentUserEmail, employees]);
 
   useEffect(() => {
     const q = query(collection(db, 'leaveRequests'), orderBy('appliedAt', 'desc'));
@@ -43,7 +53,7 @@ export default function LeaveManagement({ employees, isAdmin }: LeaveManagementP
         appliedAt: new Date().toISOString()
       });
       setIsModalOpen(false);
-      setFormData({ employeeId: '', type: 'Casual', startDate: '', endDate: '', reason: '' });
+      setFormData({ employeeId: !isAdmin && currentUserEmail ? employees.find(e => e.email === currentUserEmail)?.id || '' : '', type: 'Casual', startDate: '', endDate: '', reason: '' });
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, 'leaveRequests');
     }
@@ -106,7 +116,10 @@ export default function LeaveManagement({ employees, isAdmin }: LeaveManagementP
               </tr>
             </thead>
             <tbody className="bg-white">
-              {requests.map(req => {
+              {(isAdmin ? requests : requests.filter(req => {
+                const emp = employees.find(e => e.id === req.employeeId);
+                return emp?.email === currentUserEmail;
+              })).map(req => {
                 const emp = employees.find(e => e.id === req.employeeId);
                 let reqIsProbation = false;
                 if (emp) {
@@ -218,10 +231,11 @@ export default function LeaveManagement({ employees, isAdmin }: LeaveManagementP
                     required
                     value={formData.employeeId}
                     onChange={e => setFormData({...formData, employeeId: e.target.value})}
-                    className="w-full px-3 py-2 border border-[#E2E8F0] rounded-[4px] bg-[#F7FAFC] text-[14px] focus:outline-none focus:ring-1 focus:ring-[#4A90E2] focus:border-[#4A90E2] transition-colors"
+                    disabled={!isAdmin}
+                    className="w-full px-3 py-2 border border-[#E2E8F0] rounded-[4px] bg-[#F7FAFC] text-[14px] focus:outline-none focus:ring-1 focus:ring-[#4A90E2] focus:border-[#4A90E2] transition-colors disabled:opacity-60"
                   >
                     <option value="">Select Employee</option>
-                    {employees.map(emp => (
+                    {(isAdmin ? employees : employees.filter(e => e.email === currentUserEmail)).map(emp => (
                       <option key={emp.id} value={emp.id}>{emp.firstName} {emp.lastName}</option>
                     ))}
                   </select>

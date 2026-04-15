@@ -10,9 +10,10 @@ interface PayrollProps {
   employees: Employee[];
   isAdmin: boolean;
   settings: CompanySettings | null;
+  currentUserEmail?: string | null;
 }
 
-export default function Payroll({ employees, isAdmin, settings }: PayrollProps) {
+export default function Payroll({ employees, isAdmin, settings, currentUserEmail }: PayrollProps) {
   const [payslips, setPayslips] = useState<Payslip[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -226,7 +227,10 @@ export default function Payroll({ employees, isAdmin, settings }: PayrollProps) 
               </tr>
             </thead>
             <tbody className="bg-white">
-              {payslips.map(slip => {
+              {(isAdmin ? payslips : payslips.filter(slip => {
+                const emp = employees.find(e => e.id === slip.employeeId);
+                return emp?.email === currentUserEmail;
+              })).map(slip => {
                 const emp = employees.find(e => e.id === slip.employeeId);
                 return (
                   <tr key={slip.id} className="hover:bg-[#FAFBFC] transition-colors">

@@ -5,25 +5,27 @@ interface SidebarProps {
   currentView: 'dashboard' | 'employees' | 'access-requests' | 'profile' | 'time-off' | 'departments' | 'ai-assistant' | 'recruitment' | 'settings' | 'payroll' | 'performance' | 'documents' | 'attendance';
   onViewChange: (view: 'dashboard' | 'employees' | 'access-requests' | 'time-off' | 'departments' | 'ai-assistant' | 'recruitment' | 'settings' | 'payroll' | 'performance' | 'documents' | 'attendance') => void;
   onLogout: () => void;
-  isAdmin: boolean;
+  userRole: 'admin' | 'manager' | 'employee';
   settings: CompanySettings | null;
 }
 
-export default function Sidebar({ currentView, onViewChange, onLogout, isAdmin, settings }: SidebarProps) {
-  const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'employees', label: 'Employee Directory', icon: Users },
-    { id: 'attendance', label: 'Attendance', icon: Clock },
-    { id: 'recruitment', label: 'Recruitment', icon: ClipboardList },
-    { id: 'time-off', label: 'Time-Off', icon: Calendar },
-    { id: 'payroll', label: 'Payroll', icon: Banknote },
-    { id: 'performance', label: 'Performance', icon: Target },
-    { id: 'documents', label: 'Document Vault', icon: FolderLock },
-    { id: 'departments', label: 'Departments', icon: Building2 },
-    { id: 'ai-assistant', label: 'AI Assistant', icon: Sparkles },
-    ...(isAdmin ? [{ id: 'access-requests', label: 'Access Requests', icon: KeyRound }] : []),
-    { id: 'settings', label: 'Settings', icon: SettingsIcon },
+export default function Sidebar({ currentView, onViewChange, onLogout, userRole, settings }: SidebarProps) {
+  const allNavItems = [
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin', 'manager', 'employee'] },
+    { id: 'employees', label: 'Employee Directory', icon: Users, roles: ['admin', 'manager'] },
+    { id: 'attendance', label: 'Attendance', icon: Clock, roles: ['admin', 'manager', 'employee'] },
+    { id: 'recruitment', label: 'Recruitment', icon: ClipboardList, roles: ['admin', 'manager'] },
+    { id: 'time-off', label: 'Time-Off', icon: Calendar, roles: ['admin', 'manager', 'employee'] },
+    { id: 'payroll', label: 'Payroll', icon: Banknote, roles: ['admin', 'manager', 'employee'] },
+    { id: 'performance', label: 'Performance', icon: Target, roles: ['admin', 'manager', 'employee'] },
+    { id: 'documents', label: 'Document Vault', icon: FolderLock, roles: ['admin', 'manager', 'employee'] },
+    { id: 'departments', label: 'Departments', icon: Building2, roles: ['admin', 'manager'] },
+    { id: 'ai-assistant', label: 'AI Assistant', icon: Sparkles, roles: ['admin', 'manager', 'employee'] },
+    { id: 'access-requests', label: 'Access Requests', icon: KeyRound, roles: ['admin'] },
+    { id: 'settings', label: 'Settings', icon: SettingsIcon, roles: ['admin'] },
   ] as const;
+
+  const navItems = allNavItems.filter(item => item.roles.includes(userRole));
 
   return (
     <div className="w-[240px] bg-[#1A2233] text-[#FFFFFF] flex flex-col h-full shrink-0 py-6">
