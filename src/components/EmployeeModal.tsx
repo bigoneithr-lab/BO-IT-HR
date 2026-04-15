@@ -93,7 +93,7 @@ export default function EmployeeModal({ isOpen, onClose, employee, departments, 
                   value={formData.employeeId || ''}
                   onChange={e => setFormData({...formData, employeeId: e.target.value})}
                   className="w-full px-3 py-2 border border-[#E2E8F0] rounded-[4px] bg-[#F7FAFC] text-[14px] focus:outline-none focus:ring-1 focus:ring-[#4A90E2] focus:border-[#4A90E2] transition-colors"
-                  placeholder="e.g. EMP-001"
+                  placeholder="EMP-001"
                 />
               </div>
               <div>

@@ -83,6 +83,18 @@ export default function Payroll({ employees, isAdmin }: PayrollProps) {
     return { baseSalary, allowances, deductions, netSalary };
   };
 
+  const handleEmployeeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setFormData({
+      ...formData,
+      employeeId: e.target.value,
+      absentDays: 0,
+      hasAttendanceBonus: true,
+      hasDressCodeBonus: true,
+      teamSales: 0,
+      ownSales: 0,
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedEmployee || !isAdmin) return;
@@ -261,7 +273,7 @@ export default function Payroll({ employees, isAdmin }: PayrollProps) {
                       <select 
                         required
                         value={formData.employeeId}
-                        onChange={e => setFormData({...formData, employeeId: e.target.value})}
+                        onChange={handleEmployeeChange}
                         className="w-full px-3 py-2 border border-[#E2E8F0] rounded-[4px] bg-[#F7FAFC] text-[14px] focus:outline-none focus:ring-1 focus:ring-[#4A90E2] focus:border-[#4A90E2] transition-colors"
                       >
                         <option value="">Select Employee</option>
@@ -281,6 +293,37 @@ export default function Payroll({ employees, isAdmin }: PayrollProps) {
                       />
                     </div>
                   </div>
+
+                  {selectedEmployee && (
+                    <div className="bg-[#F7FAFC] border border-[#E2E8F0] rounded-[6px] p-4 flex flex-wrap items-center gap-x-8 gap-y-4">
+                      <div>
+                        <span className="block text-[11px] text-[#718096] uppercase tracking-wider font-medium mb-1">Role</span>
+                        <span className="text-[14px] font-medium text-[#333]">{selectedEmployee.role}</span>
+                      </div>
+                      <div>
+                        <span className="block text-[11px] text-[#718096] uppercase tracking-wider font-medium mb-1">Status</span>
+                        <span className={`px-2 py-0.5 rounded text-[12px] font-medium ${
+                          selectedEmployee.status === 'Active' ? 'bg-[#E6FFFA] text-[#2C7A7B]' :
+                          selectedEmployee.status === 'On Leave' ? 'bg-[#FFF5F5] text-[#C53030]' :
+                          'bg-[#EDF2F7] text-[#4A5568]'
+                        }`}>{selectedEmployee.status}</span>
+                      </div>
+                      <div>
+                        <span className="block text-[11px] text-[#718096] uppercase tracking-wider font-medium mb-1">Probation</span>
+                        <span className={`text-[14px] font-medium ${isProbation ? 'text-[#C53030]' : 'text-[#48BB78]'}`}>
+                          {isProbation ? 'Active (Under 6 months)' : 'Completed'}
+                        </span>
+                      </div>
+                      {isManager && (
+                        <div>
+                          <span className="block text-[11px] text-[#718096] uppercase tracking-wider font-medium mb-1">Eligibility</span>
+                          <span className="text-[14px] font-medium text-[#4A90E2] flex items-center gap-1">
+                            <Check className="w-3 h-3" /> Manager Bonuses
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {selectedEmployee && (
                     <div className="bg-[#F7FAFC] border border-[#E2E8F0] rounded-[8px] p-5 space-y-4">
