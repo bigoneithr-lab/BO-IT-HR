@@ -1,28 +1,65 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Banknote, Plus, Check, X, FileText, AlertTriangle, Download } from 'lucide-react';
-import { collection, onSnapshot, addDoc, updateDoc, doc, query, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, addDoc, updateDoc, doc, query, orderBy, where, getDocs } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { handleFirestoreError, OperationType } from '../lib/firebase-utils';
-import { Employee, Payslip } from '../types';
+import { Employee, Payslip, CompanySettings } from '../types';
 
 interface PayrollProps {
   employees: Employee[];
   isAdmin: boolean;
+  settings: CompanySettings | null;
 }
 
-export default function Payroll({ employees, isAdmin }: PayrollProps) {
+export default function Payroll({ employees, isAdmin, settings }: PayrollProps) {
   const [payslips, setPayslips] = useState<Payslip[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     employeeId: '',
     month: new Date().toISOString().slice(0, 7),
     absentDays: 0,
+    lateDaysCount: 0,
     hasAttendanceBonus: true,
     hasDressCodeBonus: true,
     teamSales: 0,
     ownSales: 0,
   });
+
+  useEffect(() => {
+    const fetchAttendance = async () => {
+      if (!formData.employeeId || !formData.month) return;
+      
+      const q = query(
+        collection(db, 'attendance'),
+        where('employeeId', '==', formData.employeeId),
+        where('month', '==', formData.month)
+      );
+      
+      try {
+        const snapshot = await getDocs(q);
+        let absences = 0;
+        let lateDaysCount = 0;
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          if (data.status === 'Absent') absences += 1;
+          if (data.status === 'Half Day') absences += 0.5;
+          if (data.isLate) lateDaysCount += 1;
+        });
+        
+        setFormData(prev => ({
+          ...prev,
+          absentDays: absences,
+          lateDaysCount: lateDaysCount,
+          hasAttendanceBonus: absences === 0 && lateDaysCount === 0
+        }));
+      } catch (error) {
+        console.error("Error fetching attendance for payroll", error);
+      }
+    };
+
+    fetchAttendance();
+  }, [formData.employeeId, formData.month]);
 
   useEffect(() => {
     const q = query(collection(db, 'payslips'), orderBy('month', 'desc'));
@@ -57,9 +94,15 @@ export default function Payroll({ employees, isAdmin }: PayrollProps) {
       teamSales: 0,
       ownSales: 0
     };
+    const penaltyDays = formData.lateDaysCount >= 3 ? formData.lateDaysCount - 2 : 0;
+    const deductionPerDay = baseSalary / 30;
+
     const deductions = {
       absences: 0,
-      absenceDays: formData.absentDays || 0
+      absenceDays: formData.absentDays || 0,
+      lateDays: formData.lateDaysCount || 0,
+      latePenaltyDays: penaltyDays,
+      lateDeduction: Math.round(penaltyDays * deductionPerDay)
     };
 
     if (isManager) {
@@ -77,8 +120,8 @@ export default function Payroll({ employees, isAdmin }: PayrollProps) {
     }
 
     const totalAllowances = Object.values(allowances).reduce((a, b) => a + b, 0);
-    const totalDeductions = Object.values(deductions).reduce((a, b) => a + b, 0) - deductions.absenceDays; // don't sum the days
-    const netSalary = Math.max(0, baseSalary + totalAllowances - deductions.absences);
+    const totalDeductions = deductions.absences + deductions.lateDeduction;
+    const netSalary = Math.max(0, baseSalary + totalAllowances - totalDeductions);
 
     return { baseSalary, allowances, deductions, netSalary };
   };
@@ -88,6 +131,7 @@ export default function Payroll({ employees, isAdmin }: PayrollProps) {
       ...formData,
       employeeId: e.target.value,
       absentDays: 0,
+      lateDaysCount: 0,
       hasAttendanceBonus: true,
       hasDressCodeBonus: true,
       teamSales: 0,
@@ -119,6 +163,7 @@ export default function Payroll({ employees, isAdmin }: PayrollProps) {
         employeeId: '',
         month: new Date().toISOString().slice(0, 7),
         absentDays: 0,
+        lateDaysCount: 0,
         hasAttendanceBonus: true,
         hasDressCodeBonus: true,
         teamSales: 0,
@@ -402,14 +447,18 @@ export default function Payroll({ employees, isAdmin }: PayrollProps) {
                                   <AlertTriangle className="w-4 h-4 text-[#C53030]" />
                                   <span className="text-[13px] font-medium text-[#C53030]">Probation Period Active</span>
                                 </div>
-                                <label className="block text-[12px] font-medium text-[#718096] uppercase tracking-[0.5px] mb-1">Unpaid Absences (Days)</label>
+                                <label className="flex items-center gap-2 text-[12px] font-medium text-[#718096] uppercase tracking-[0.5px] mb-1">
+                                  Unpaid Absences (Days)
+                                  <span className="bg-[#EBF4FF] text-[#2B6CB0] px-1.5 py-0.5 rounded text-[10px] normal-case tracking-normal">Auto-calculated</span>
+                                </label>
                                 <div className="flex items-center gap-3">
                                   <input 
                                     type="number" 
                                     min="0"
                                     max="31"
+                                    step="0.5"
                                     value={formData.absentDays}
-                                    onChange={e => setFormData({...formData, absentDays: parseInt(e.target.value) || 0})}
+                                    onChange={e => setFormData({...formData, absentDays: parseFloat(e.target.value) || 0})}
                                     className="w-32 px-3 py-2 border border-[#E2E8F0] rounded-[4px] bg-white text-[14px] focus:outline-none focus:ring-1 focus:ring-[#4A90E2] transition-colors"
                                   />
                                   <span className="text-[13px] text-[#718096]">
@@ -420,6 +469,32 @@ export default function Payroll({ employees, isAdmin }: PayrollProps) {
                             )}
                           </div>
                         </>
+                      )}
+
+                      {formData.lateDaysCount > 0 && (
+                        <div className="pt-3 border-t border-[#E2E8F0]">
+                          <label className="flex items-center gap-2 text-[12px] font-medium text-[#718096] uppercase tracking-[0.5px] mb-1">
+                            Late Arrivals ({formData.lateDaysCount} days)
+                            <span className="bg-[#EBF4FF] text-[#2B6CB0] px-1.5 py-0.5 rounded text-[10px] normal-case tracking-normal">Auto-calculated</span>
+                          </label>
+                          <div className="flex items-center justify-between">
+                            <span className="text-[14px] text-[#333]">
+                              {formData.lateDaysCount >= 3 ? `Penalty: ${formData.lateDaysCount - 2} day(s) salary cut` : 'No penalty (< 3 days)'}
+                            </span>
+                            <span className="text-[14px] font-medium text-[#C53030]">
+                              - {formatCurrency(currentCalc?.deductions.lateDeduction || 0)}
+                            </span>
+                          </div>
+                          {formData.lateDaysCount >= 7 && (
+                            <div className="mt-3 bg-[#FFF5F5] border border-[#FC8181] text-[#C53030] p-3 rounded-[4px] flex items-start gap-2">
+                              <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
+                              <div className="text-[13px]">
+                                <strong className="block font-bold mb-0.5">Termination Warning</strong>
+                                Employee has been late {formData.lateDaysCount} days this month. According to policy, 7 or more days late results in termination.
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       )}
 
                       {currentCalc && (

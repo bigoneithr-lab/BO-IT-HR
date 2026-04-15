@@ -11,6 +11,20 @@ export interface VaultDocument {
   size: number;
 }
 
+export interface AttendanceRecord {
+  id: string;
+  employeeId: string;
+  date: string; // YYYY-MM-DD
+  month: string; // YYYY-MM
+  status: 'Present' | 'Absent' | 'Half Day' | 'On Leave';
+  checkIn?: string;
+  checkOut?: string;
+  isLate?: boolean;
+  lateMinutes?: number;
+  markedBy: string;
+  updatedAt: string;
+}
+
 export interface Employee {
   id: string;
   employeeId?: string;
@@ -70,6 +84,7 @@ export interface CompanySettings {
   logoUrl?: string;
   defaultCasualDays: number;
   defaultSickDays: number;
+  workStartTime?: string;
 }
 
 export interface Payslip {
@@ -87,6 +102,9 @@ export interface Payslip {
   deductions: {
     absences: number;
     absenceDays: number;
+    lateDays?: number;
+    latePenaltyDays?: number;
+    lateDeduction?: number;
   };
   netSalary: number;
   status: 'Draft' | 'Paid';

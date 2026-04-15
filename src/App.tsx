@@ -17,10 +17,11 @@ import Settings from './components/Settings';
 import Payroll from './components/Payroll';
 import Performance from './components/Performance';
 import DocumentVault from './components/DocumentVault';
+import Attendance from './components/Attendance';
 import { Employee, Department, Applicant, CompanySettings } from './types';
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<'dashboard' | 'employees' | 'access-requests' | 'profile' | 'time-off' | 'departments' | 'ai-assistant' | 'recruitment' | 'settings' | 'payroll' | 'performance' | 'documents'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'employees' | 'access-requests' | 'profile' | 'time-off' | 'departments' | 'ai-assistant' | 'recruitment' | 'settings' | 'payroll' | 'performance' | 'documents' | 'attendance'>('dashboard');
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [applicants, setApplicants] = useState<Applicant[]>([]);
@@ -273,9 +274,10 @@ export default function App() {
           {currentView === 'departments' && <Departments employees={employees} departments={departments} isAdmin={appUserStatus === 'admin'} />}
           {currentView === 'ai-assistant' && <AIAssistant />}
           {currentView === 'settings' && <Settings settings={companySettings} isAdmin={appUserStatus === 'admin'} />}
-          {currentView === 'payroll' && <Payroll employees={employees} isAdmin={appUserStatus === 'admin'} />}
+          {currentView === 'payroll' && <Payroll employees={employees} isAdmin={appUserStatus === 'admin'} settings={companySettings} />}
           {currentView === 'performance' && <Performance employees={employees} isAdmin={appUserStatus === 'admin'} />}
           {currentView === 'documents' && <DocumentVault employees={employees} isAdmin={appUserStatus === 'admin'} />}
+          {currentView === 'attendance' && <Attendance employees={employees} isAdmin={appUserStatus === 'admin'} settings={companySettings} />}
           {currentView === 'profile' && selectedEmployee && (
             <EmployeeProfile 
               employee={selectedEmployee} 

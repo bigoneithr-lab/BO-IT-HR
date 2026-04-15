@@ -16,7 +16,8 @@ export default function Settings({ settings, isAdmin }: SettingsProps) {
     companyName: 'BO-IT HR',
     defaultCasualDays: 14,
     defaultSickDays: 10,
-    logoUrl: ''
+    logoUrl: '',
+    workStartTime: '21:00'
   });
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -216,6 +217,39 @@ export default function Settings({ settings, isAdmin }: SettingsProps) {
                   disabled={!isAdmin}
                   className="w-full px-4 py-2.5 border border-[#E2E8F0] rounded-[4px] bg-[#F7FAFC] text-[14px] focus:outline-none focus:ring-1 focus:ring-[#4A90E2] transition-colors disabled:opacity-60"
                 />
+              </div>
+            </div>
+          </section>
+
+          <section className="space-y-4">
+            <div className="flex items-center gap-2 border-b border-[#F0F2F5] pb-2">
+              <Calendar className="w-5 h-5 text-[#4A90E2]" />
+              <h2 className="text-[16px] font-semibold text-[#333]">Attendance & Payroll</h2>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-[12px] font-medium text-[#718096] uppercase tracking-[0.5px] mb-2">Standard Work Start Time</label>
+                <input 
+                  type="time" 
+                  value={formData.workStartTime || '21:00'}
+                  onChange={e => setFormData({...formData, workStartTime: e.target.value})}
+                  disabled={!isAdmin}
+                  className="w-full px-4 py-2.5 border border-[#E2E8F0] rounded-[4px] bg-[#F7FAFC] text-[14px] focus:outline-none focus:ring-1 focus:ring-[#4A90E2] transition-colors disabled:opacity-60"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[12px] font-medium text-[#718096] uppercase tracking-[0.5px] mb-2">Late Policy</label>
+                <div className="w-full px-4 py-2.5 border border-[#E2E8F0] rounded-[4px] bg-[#F7FAFC] text-[13px] text-[#4A5568]">
+                  <ul className="list-disc pl-4 space-y-1">
+                    <li>3 days late = 1 day salary cut</li>
+                    <li>4 days late = 2 day salary cut</li>
+                    <li>5 days late = 3 day salary cut</li>
+                    <li>6 days late = 4 day salary cut</li>
+                    <li>7 days late = Termination</li>
+                  </ul>
+                </div>
               </div>
             </div>
           </section>

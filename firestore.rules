@@ -67,5 +67,10 @@ service cloud.firestore {
       allow read: if isApproved();
       allow write: if isApproved();
     }
+
+    match /attendance/{recordId} {
+      allow read: if isApproved();
+      allow write: if isApproved();
+    }
   }
 }
