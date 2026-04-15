@@ -1,13 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Bell, Search, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
+import { Bell, Search, CheckCircle2, Clock, AlertCircle, Menu } from 'lucide-react';
 import { User } from 'firebase/auth';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface HeaderProps {
   user: User | null;
+  onMenuClick: () => void;
 }
 
-export default function Header({ user }: HeaderProps) {
+export default function Header({ user, onMenuClick }: HeaderProps) {
   const [showNotifications, setShowNotifications] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -32,21 +33,30 @@ export default function Header({ user }: HeaderProps) {
   ];
 
   return (
-    <header className="h-[64px] bg-[#FFFFFF] border-b border-[#E0E0E0] flex items-center justify-between px-8 shrink-0">
-      <div className="flex-1 max-w-lg">
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-4 w-4 text-[#718096]" />
+    <header className="h-[64px] bg-[#FFFFFF] border-b border-[#E0E0E0] flex items-center justify-between px-4 md:px-8 shrink-0">
+      <div className="flex items-center gap-4 flex-1">
+        <button 
+          onClick={onMenuClick}
+          className="md:hidden p-2 text-[#718096] hover:text-[#333] hover:bg-[#F0F2F5] rounded-full transition-colors"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+        
+        <div className="flex-1 max-w-lg hidden md:block">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-4 w-4 text-[#718096]" />
+            </div>
+            <input
+              type="text"
+              placeholder="Search employees, files, or tasks..."
+              className="block w-full max-w-[300px] pl-10 pr-4 py-2 border border-[#E2E8F0] rounded-[4px] bg-[#F7FAFC] text-[#718096] placeholder-[#718096] focus:outline-none focus:ring-1 focus:ring-[#4A90E2] focus:border-[#4A90E2] text-[14px] transition-colors"
+            />
           </div>
-          <input
-            type="text"
-            placeholder="Search employees, files, or tasks..."
-            className="block w-[300px] pl-10 pr-4 py-2 border border-[#E2E8F0] rounded-[4px] bg-[#F7FAFC] text-[#718096] placeholder-[#718096] focus:outline-none focus:ring-1 focus:ring-[#4A90E2] focus:border-[#4A90E2] text-[14px] transition-colors"
-          />
         </div>
       </div>
       
-      <div className="flex items-center gap-3 ml-4">
+      <div className="flex items-center gap-2 md:gap-3 ml-4">
         <div className="relative" ref={dropdownRef}>
           <button 
             onClick={() => setShowNotifications(!showNotifications)}

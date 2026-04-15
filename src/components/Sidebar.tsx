@@ -1,4 +1,4 @@
-import { Users, LayoutDashboard, Settings as SettingsIcon, Building2, LogOut, KeyRound, Calendar, Sparkles, ClipboardList, Banknote, Target, FolderLock, Clock } from 'lucide-react';
+import { Users, LayoutDashboard, Settings as SettingsIcon, Building2, LogOut, KeyRound, Calendar, Sparkles, ClipboardList, Banknote, Target, FolderLock, Clock, X } from 'lucide-react';
 import { CompanySettings } from '../types';
 
 interface SidebarProps {
@@ -7,9 +7,11 @@ interface SidebarProps {
   onLogout: () => void;
   userRole: 'admin' | 'manager' | 'employee';
   settings: CompanySettings | null;
+  isMobileMenuOpen: boolean;
+  setIsMobileMenuOpen: (open: boolean) => void;
 }
 
-export default function Sidebar({ currentView, onViewChange, onLogout, userRole, settings }: SidebarProps) {
+export default function Sidebar({ currentView, onViewChange, onLogout, userRole, settings, isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps) {
   const allNavItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin', 'manager', 'employee'] },
     { id: 'employees', label: 'Employee Directory', icon: Users, roles: ['admin', 'manager'] },
@@ -28,19 +30,40 @@ export default function Sidebar({ currentView, onViewChange, onLogout, userRole,
   const navItems = allNavItems.filter(item => item.roles.includes(userRole));
 
   return (
-    <div className="w-[240px] bg-[#1A2233] text-[#FFFFFF] flex flex-col h-full shrink-0 py-6">
-      <div className="px-6 pb-8 mb-6 border-b border-[#2E3A59]">
-        <div className="flex items-center gap-3">
-          {settings?.logoUrl && (
-            <img src={settings.logoUrl} alt="Logo" className="w-8 h-8 rounded object-contain bg-white shrink-0" />
-          )}
-          <span className="text-[18px] font-bold tracking-[0.5px] truncate" title={settings?.companyName || 'BO-IT HR'}>
-            {settings?.companyName || 'BO-IT HR'}
-          </span>
-        </div>
-      </div>
+    <>
+      {/* Mobile Overlay */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
 
-      <nav className="flex-1 flex flex-col overflow-y-auto">
+      {/* Sidebar */}
+      <div className={`
+        fixed md:static inset-y-0 left-0 z-50
+        w-[240px] bg-[#1A2233] text-[#FFFFFF] flex flex-col h-full shrink-0 py-6
+        transform transition-transform duration-200 ease-in-out
+        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+      `}>
+        <div className="px-6 pb-8 mb-6 border-b border-[#2E3A59] flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            {settings?.logoUrl && (
+              <img src={settings.logoUrl} alt="Logo" className="w-8 h-8 rounded object-contain bg-white shrink-0" />
+            )}
+            <span className="text-[18px] font-bold tracking-[0.5px] truncate" title={settings?.companyName || 'BO-IT HR'}>
+              {settings?.companyName || 'BO-IT HR'}
+            </span>
+          </div>
+          <button 
+            className="md:hidden text-gray-400 hover:text-white"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <nav className="flex-1 flex flex-col overflow-y-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = currentView === item.id || (currentView === 'profile' && item.id === 'employees');
@@ -70,6 +93,7 @@ export default function Sidebar({ currentView, onViewChange, onLogout, userRole,
           Sign Out
         </button>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

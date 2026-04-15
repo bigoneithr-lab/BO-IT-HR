@@ -36,6 +36,7 @@ export default function App() {
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [isEmailLogin, setIsEmailLogin] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -352,14 +353,22 @@ export default function App() {
     <div className="flex h-screen bg-[#F0F2F5] overflow-hidden font-sans text-[#333]">
       <Sidebar 
         currentView={currentView} 
-        onViewChange={setCurrentView} 
+        onViewChange={(view) => {
+          setCurrentView(view);
+          setIsMobileMenuOpen(false);
+        }} 
         onLogout={handleLogout} 
         userRole={userRole}
         settings={companySettings}
+        isMobileMenuOpen={isMobileMenuOpen}
+        setIsMobileMenuOpen={setIsMobileMenuOpen}
       />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <Header user={user} />
-        <main className="flex-1 overflow-y-auto p-8">
+        <Header 
+          user={user} 
+          onMenuClick={() => setIsMobileMenuOpen(true)} 
+        />
+        <main className="flex-1 overflow-y-auto p-4 md:p-8">
           {currentView === 'dashboard' && <Dashboard employees={employees} departments={departments} />}
           {currentView === 'employees' && <EmployeeList employees={employees} departments={departments} onViewProfile={handleViewProfile} />}
           {currentView === 'recruitment' && <RecruitmentBoard applicants={applicants} departments={departments} />}
