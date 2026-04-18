@@ -4,8 +4,20 @@ import { Send, Bot, User, Loader2, Sparkles } from 'lucide-react';
 import { GoogleGenAI } from '@google/genai';
 import Markdown from 'react-markdown';
 
-// Initialize the Gemini API client
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+// We lazy-initialize the client to prevent "process is not defined" errors in browser builds
+let aiClient: GoogleGenAI | null = null;
+function getAIClient() {
+  if (!aiClient) {
+    // Check both Vite client-side env and Node-side process env dynamically
+    // @ts-ignore
+    const apiKey = typeof process !== 'undefined' ? process.env.GEMINI_API_KEY : import.meta.env.VITE_GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error("GEMINI_API_KEY is missing. Please add VITE_GEMINI_API_KEY=your_key to your local .env file.");
+    }
+    aiClient = new GoogleGenAI({ apiKey });
+  }
+  return aiClient;
+}
 
 interface Message {
   id: string;
@@ -52,6 +64,7 @@ export default function AIAssistant() {
       const history = messages.map(msg => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`).join('\n\n');
       const prompt = `Conversation History:\n${history}\n\nUser: ${userMessage.content}\nAssistant:`;
 
+      const ai = getAIClient();
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: prompt,
