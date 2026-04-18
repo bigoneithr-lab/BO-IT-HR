@@ -23,13 +23,13 @@ export default function AccessRequests() {
       animate={{ opacity: 1, y: 0 }}
       className="max-w-7xl mx-auto h-full flex flex-col gap-6"
     >
-      <div className="flex items-center justify-between">
-        <h1 className="text-[24px] font-bold text-[#333]">Access Requests</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <h1 className="text-[20px] md:text-[24px] font-bold text-[#333]">Access Requests</h1>
       </div>
 
       <div className="bg-[#FFFFFF] rounded-[8px] shadow-[0_1px_3px_rgba(0,0,0,0.1)] flex-1 overflow-hidden">
-        <div className="overflow-auto h-full">
-          <table className="w-full text-left border-collapse">
+        <div className="overflow-x-auto h-full">
+          <table className="w-full text-left border-collapse min-w-[800px]">
             <thead className="bg-[#FAFBFC] sticky top-0 z-10">
               <tr>
                 <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5]">User</th>

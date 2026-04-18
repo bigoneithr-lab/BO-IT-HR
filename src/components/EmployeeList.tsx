@@ -76,13 +76,13 @@ export default function EmployeeList({ employees, departments, onViewProfile }: 
       animate={{ opacity: 1, y: 0 }}
       className="max-w-7xl mx-auto h-full flex flex-col gap-6"
     >
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-[24px] font-bold text-[#333]">Employee Directory</h1>
+          <h1 className="text-[20px] md:text-[24px] font-bold text-[#333]">Employee Directory</h1>
         </div>
         <button 
           onClick={handleAddNew}
-          className="bg-[#4A90E2] hover:bg-[#3A80D2] text-white px-4 py-2 rounded-[4px] text-[14px] font-medium flex items-center gap-2 transition-colors"
+          className="bg-[#4A90E2] hover:bg-[#3A80D2] text-white px-4 py-2 rounded-[4px] text-[14px] font-medium flex items-center justify-center gap-2 transition-colors w-full sm:w-auto"
         >
           <Plus className="w-4 h-4" />
           Add Employee
@@ -90,8 +90,8 @@ export default function EmployeeList({ employees, departments, onViewProfile }: 
       </div>
 
       <div className="bg-[#FFFFFF] rounded-[8px] shadow-[0_1px_3px_rgba(0,0,0,0.1)] flex-1 flex flex-col overflow-hidden">
-        <div className="p-5 border-b border-[#F0F2F5] flex items-center justify-between">
-          <div className="relative w-[300px]">
+        <div className="p-4 md:p-5 border-b border-[#F0F2F5] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="relative w-full sm:w-[300px]">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#718096]" />
             <input 
               type="text"
@@ -106,8 +106,8 @@ export default function EmployeeList({ employees, departments, onViewProfile }: 
           </div>
         </div>
 
-        <div className="flex-1 overflow-auto">
-          <table className="w-full text-left border-collapse">
+        <div className="flex-1 overflow-x-auto">
+          <table className="w-full text-left border-collapse min-w-[800px]">
             <thead className="bg-[#FAFBFC] sticky top-0 z-10">
               <tr>
                 <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5]">Employee</th>

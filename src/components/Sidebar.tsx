@@ -13,18 +13,18 @@ interface SidebarProps {
 
 export default function Sidebar({ currentView, onViewChange, onLogout, userRole, settings, isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps) {
   const allNavItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin', 'manager', 'employee'] },
-    { id: 'employees', label: 'Employee Directory', icon: Users, roles: ['admin', 'manager'] },
-    { id: 'attendance', label: 'Attendance', icon: Clock, roles: ['admin', 'manager', 'employee'] },
-    { id: 'recruitment', label: 'Recruitment', icon: ClipboardList, roles: ['admin', 'manager'] },
-    { id: 'time-off', label: 'Time-Off', icon: Calendar, roles: ['admin', 'manager', 'employee'] },
-    { id: 'payroll', label: 'Payroll', icon: Banknote, roles: ['admin', 'manager', 'employee'] },
-    { id: 'performance', label: 'Performance', icon: Target, roles: ['admin', 'manager', 'employee'] },
-    { id: 'documents', label: 'Document Vault', icon: FolderLock, roles: ['admin', 'manager', 'employee'] },
-    { id: 'departments', label: 'Departments', icon: Building2, roles: ['admin', 'manager'] },
-    { id: 'ai-assistant', label: 'AI Assistant', icon: Sparkles, roles: ['admin', 'manager', 'employee'] },
-    { id: 'access-requests', label: 'Access Requests', icon: KeyRound, roles: ['admin'] },
-    { id: 'settings', label: 'Settings', icon: SettingsIcon, roles: ['admin'] },
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin', 'manager', 'employee'] as string[] },
+    { id: 'employees', label: 'Employee Directory', icon: Users, roles: ['admin', 'manager'] as string[] },
+    { id: 'attendance', label: 'Attendance', icon: Clock, roles: ['admin', 'manager', 'employee'] as string[] },
+    { id: 'recruitment', label: 'Recruitment', icon: ClipboardList, roles: ['admin', 'manager'] as string[] },
+    { id: 'time-off', label: 'Time-Off', icon: Calendar, roles: ['admin', 'manager', 'employee'] as string[] },
+    { id: 'payroll', label: 'Payroll', icon: Banknote, roles: ['admin', 'manager', 'employee'] as string[] },
+    { id: 'performance', label: 'Performance', icon: Target, roles: ['admin', 'manager', 'employee'] as string[] },
+    { id: 'documents', label: 'Document Vault', icon: FolderLock, roles: ['admin', 'manager', 'employee'] as string[] },
+    { id: 'departments', label: 'Departments', icon: Building2, roles: ['admin', 'manager'] as string[] },
+    { id: 'ai-assistant', label: 'AI Assistant', icon: Sparkles, roles: ['admin', 'manager', 'employee'] as string[] },
+    { id: 'access-requests', label: 'Access Requests', icon: KeyRound, roles: ['admin'] as string[] },
+    { id: 'settings', label: 'Settings', icon: SettingsIcon, roles: ['admin'] as string[] },
   ] as const;
 
   const navItems = allNavItems.filter(item => item.roles.includes(userRole));

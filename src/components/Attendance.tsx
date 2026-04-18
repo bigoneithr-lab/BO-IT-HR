@@ -178,45 +178,45 @@ export default function Attendance({ employees, isAdmin, settings, currentUserEm
       animate={{ opacity: 1, y: 0 }}
       className="max-w-7xl mx-auto h-full flex flex-col gap-6"
     >
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-[24px] font-bold text-[#333]">Daily Attendance</h1>
-          <p className="text-[14px] text-[#718096] mt-1">Track daily attendance to automatically sync with payroll.</p>
+          <h1 className="text-[20px] md:text-[24px] font-bold text-[#333]">Daily Attendance</h1>
+          <p className="text-[13px] md:text-[14px] text-[#718096] mt-1">Track daily attendance to automatically sync with payroll.</p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
           {currentEmployee && selectedDate === new Date().toISOString().split('T')[0] && !currentEmployeeRecord?.checkIn && (
             <button 
               onClick={handleSelfCheckIn}
-              className="bg-[#48BB78] hover:bg-[#38A169] text-white px-4 py-2 rounded-[4px] text-[14px] font-medium flex items-center gap-2 transition-colors mr-2"
+              className="flex-1 sm:flex-none justify-center bg-[#48BB78] hover:bg-[#38A169] text-white px-4 py-2 rounded-[4px] text-[14px] font-medium flex items-center gap-2 transition-colors"
             >
-              <Clock className="w-4 h-4" />
-              Check In Now
+              <Clock className="w-4 h-4 ml-auto sm:ml-0" />
+              <span className="mr-auto sm:mr-0">Check In Now</span>
             </button>
           )}
-          <div className="flex items-center gap-2 bg-white border border-[#E2E8F0] rounded-[4px] px-3 py-2">
+          <div className="flex-1 sm:flex-none justify-center flex items-center gap-2 bg-white border border-[#E2E8F0] rounded-[4px] px-3 py-2 w-full sm:w-auto">
             <CalendarIcon className="w-4 h-4 text-[#718096]" />
             <input 
               type="date" 
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="text-[14px] text-[#333] focus:outline-none bg-transparent"
+              className="text-[14px] text-[#333] focus:outline-none bg-transparent w-full"
             />
           </div>
           {isAdmin && (
             <button 
               onClick={markAllPresent}
-              className="bg-[#4A90E2] hover:bg-[#3A80D2] text-white px-4 py-2 rounded-[4px] text-[14px] font-medium flex items-center gap-2 transition-colors"
+              className="flex-1 sm:flex-none justify-center bg-[#4A90E2] hover:bg-[#3A80D2] text-white px-4 py-2 rounded-[4px] text-[14px] font-medium flex items-center gap-2 transition-colors w-full sm:w-auto"
             >
-              <CheckSquare className="w-4 h-4" />
-              Mark All Present
+              <CheckSquare className="w-4 h-4 ml-auto sm:ml-0" />
+              <span className="mr-auto sm:mr-0">Mark All Present</span>
             </button>
           )}
         </div>
       </div>
 
       <div className="bg-[#FFFFFF] rounded-[8px] shadow-[0_1px_3px_rgba(0,0,0,0.1)] flex-1 overflow-hidden">
-        <div className="overflow-auto h-full">
-          <table className="w-full text-left border-collapse">
+        <div className="overflow-x-auto h-full">
+          <table className="w-full text-left border-collapse min-w-[800px]">
             <thead className="bg-[#FAFBFC] sticky top-0 z-10">
               <tr>
                 <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5]">Employee</th>

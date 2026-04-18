@@ -129,14 +129,14 @@ export default function DocumentVault({ employees, isAdmin, currentUserEmail }: 
       animate={{ opacity: 1, y: 0 }}
       className="max-w-7xl mx-auto h-full flex flex-col gap-6"
     >
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-[24px] font-bold text-[#333]">Document Vault</h1>
-          <p className="text-[14px] text-[#718096] mt-1">Secure storage for employee contracts, IDs, and tax documents.</p>
+          <h1 className="text-[20px] md:text-[24px] font-bold text-[#333]">Document Vault</h1>
+          <p className="text-[13px] md:text-[14px] text-[#718096] mt-1">Secure storage for employee contracts, IDs, and tax documents.</p>
         </div>
         <button 
           onClick={() => setIsModalOpen(true)}
-          className="bg-[#4A90E2] hover:bg-[#3A80D2] text-white px-4 py-2 rounded-[4px] text-[14px] font-medium flex items-center gap-2 transition-colors"
+          className="bg-[#4A90E2] hover:bg-[#3A80D2] text-white px-4 py-2 rounded-[4px] text-[14px] font-medium flex items-center justify-center gap-2 transition-colors w-full sm:w-auto"
         >
           <UploadCloud className="w-4 h-4" />
           Upload Document
@@ -144,8 +144,8 @@ export default function DocumentVault({ employees, isAdmin, currentUserEmail }: 
       </div>
 
       <div className="bg-[#FFFFFF] rounded-[8px] shadow-[0_1px_3px_rgba(0,0,0,0.1)] flex-1 flex flex-col overflow-hidden">
-        <div className="p-4 border-b border-[#F0F2F5] flex items-center gap-4 bg-[#FAFBFC]">
-          <div className="relative flex-1 max-w-md">
+        <div className="p-4 border-b border-[#F0F2F5] flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-[#FAFBFC]">
+          <div className="relative flex-1 w-full max-w-md">
             <Search className="w-4 h-4 text-[#A0AEC0] absolute left-3 top-1/2 -translate-y-1/2" />
             <input 
               type="text" 
@@ -155,12 +155,12 @@ export default function DocumentVault({ employees, isAdmin, currentUserEmail }: 
               className="w-full pl-9 pr-4 py-2 border border-[#E2E8F0] rounded-[4px] text-[14px] focus:outline-none focus:ring-1 focus:ring-[#4A90E2] transition-colors"
             />
           </div>
-          <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-[#718096]" />
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <Filter className="w-4 h-4 text-[#718096] shrink-0" />
             <select
               value={filterCategory}
               onChange={(e) => setFilterCategory(e.target.value)}
-              className="border border-[#E2E8F0] rounded-[4px] px-3 py-2 text-[14px] text-[#4A5568] focus:outline-none focus:ring-1 focus:ring-[#4A90E2] bg-white"
+              className="border border-[#E2E8F0] rounded-[4px] px-3 py-2 text-[14px] text-[#4A5568] focus:outline-none focus:ring-1 focus:ring-[#4A90E2] bg-white w-full sm:w-auto"
             >
               <option value="All">All Categories</option>
               <option value="Contract">Contracts</option>

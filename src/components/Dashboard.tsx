@@ -147,7 +147,7 @@ export default function Dashboard({ employees, departments }: DashboardProps) {
           </button>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-left">
+          <table className="w-full border-collapse text-left min-w-[800px]">
             <thead>
               <tr>
                 <th className="px-6 py-3 text-[12px] uppercase text-[#718096] bg-[#FAFBFC] border-b border-[#F0F2F5] font-normal">Employee</th>

@@ -197,15 +197,15 @@ export default function Payroll({ employees, isAdmin, settings, currentUserEmail
       animate={{ opacity: 1, y: 0 }}
       className="max-w-7xl mx-auto h-full flex flex-col gap-6"
     >
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-[24px] font-bold text-[#333]">Payroll & Salary</h1>
-          <p className="text-[14px] text-[#718096] mt-1">Manage employee payslips and salary calculations.</p>
+          <h1 className="text-[20px] md:text-[24px] font-bold text-[#333]">Payroll & Salary</h1>
+          <p className="text-[13px] md:text-[14px] text-[#718096] mt-1">Manage employee payslips and salary calculations.</p>
         </div>
         {isAdmin && (
           <button 
             onClick={() => setIsModalOpen(true)}
-            className="bg-[#4A90E2] hover:bg-[#3A80D2] text-white px-4 py-2 rounded-[4px] text-[14px] font-medium flex items-center gap-2 transition-colors"
+            className="bg-[#4A90E2] hover:bg-[#3A80D2] text-white px-4 py-2 rounded-[4px] text-[14px] font-medium flex items-center justify-center gap-2 transition-colors w-full sm:w-auto"
           >
             <Plus className="w-4 h-4" />
             Generate Payslip
@@ -214,8 +214,8 @@ export default function Payroll({ employees, isAdmin, settings, currentUserEmail
       </div>
 
       <div className="bg-[#FFFFFF] rounded-[8px] shadow-[0_1px_3px_rgba(0,0,0,0.1)] flex-1 overflow-hidden">
-        <div className="overflow-auto h-full">
-          <table className="w-full text-left border-collapse">
+        <div className="overflow-x-auto h-full">
+          <table className="w-full text-left border-collapse min-w-[800px]">
             <thead className="bg-[#FAFBFC] sticky top-0 z-10">
               <tr>
                 <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5]">Month</th>

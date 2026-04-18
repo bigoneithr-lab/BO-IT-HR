@@ -65,12 +65,12 @@ export default function Departments({ employees, departments, isAdmin }: Departm
       animate={{ opacity: 1, y: 0 }}
       className="max-w-7xl mx-auto h-full flex flex-col gap-6"
     >
-      <div className="flex items-center justify-between">
-        <h1 className="text-[24px] font-bold text-[#333]">Departments & Org Chart</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <h1 className="text-[20px] md:text-[24px] font-bold text-[#333]">Departments & Org Chart</h1>
         {isAdmin && (
           <button 
             onClick={() => handleOpenModal()}
-            className="bg-[#4A90E2] hover:bg-[#3A80D2] text-white px-4 py-2 rounded-[4px] text-[14px] font-medium flex items-center gap-2 transition-colors"
+            className="bg-[#4A90E2] hover:bg-[#3A80D2] text-white px-4 py-2 rounded-[4px] text-[14px] font-medium flex items-center justify-center gap-2 transition-colors w-full sm:w-auto"
           >
             <Plus className="w-4 h-4" />
             Add Department

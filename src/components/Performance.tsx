@@ -122,26 +122,26 @@ export default function Performance({ employees, isAdmin, currentUserEmail }: Pe
       animate={{ opacity: 1, y: 0 }}
       className="max-w-7xl mx-auto h-full flex flex-col gap-6"
     >
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-[24px] font-bold text-[#333]">Performance & Goals</h1>
-          <p className="text-[14px] text-[#718096] mt-1">Track KPIs, set objectives, and conduct reviews.</p>
+          <h1 className="text-[20px] md:text-[24px] font-bold text-[#333]">Performance & Goals</h1>
+          <p className="text-[13px] md:text-[14px] text-[#718096] mt-1">Track KPIs, set objectives, and conduct reviews.</p>
         </div>
         {isAdmin && (
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
             <button 
               onClick={() => setIsGoalModalOpen(true)}
-              className="bg-white border border-[#E2E8F0] hover:bg-[#F7FAFC] text-[#4A5568] px-4 py-2 rounded-[4px] text-[14px] font-medium flex items-center gap-2 transition-colors"
+              className="flex-1 sm:flex-none justify-center bg-white border border-[#E2E8F0] hover:bg-[#F7FAFC] text-[#4A5568] px-4 py-2 rounded-[4px] text-[14px] font-medium flex items-center gap-2 transition-colors"
             >
-              <Target className="w-4 h-4" />
-              Set Goal
+              <Target className="w-4 h-4 ml-auto sm:ml-0" />
+              <span className="mr-auto sm:mr-0">Set Goal</span>
             </button>
             <button 
               onClick={() => setIsReviewModalOpen(true)}
-              className="bg-[#4A90E2] hover:bg-[#3A80D2] text-white px-4 py-2 rounded-[4px] text-[14px] font-medium flex items-center gap-2 transition-colors"
+              className="flex-1 sm:flex-none justify-center bg-[#4A90E2] hover:bg-[#3A80D2] text-white px-4 py-2 rounded-[4px] text-[14px] font-medium flex items-center gap-2 transition-colors"
             >
-              <Star className="w-4 h-4" />
-              New Review
+              <Star className="w-4 h-4 ml-auto sm:ml-0" />
+              <span className="mr-auto sm:mr-0">New Review</span>
             </button>
           </div>
         )}
@@ -165,9 +165,9 @@ export default function Performance({ employees, isAdmin, currentUserEmail }: Pe
       </div>
 
       <div className="bg-[#FFFFFF] rounded-[8px] shadow-[0_1px_3px_rgba(0,0,0,0.1)] flex-1 overflow-hidden">
-        <div className="overflow-auto h-full">
+        <div className="overflow-x-auto h-full">
           {activeTab === 'goals' ? (
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse min-w-[800px]">
               <thead className="bg-[#FAFBFC] sticky top-0 z-10">
                 <tr>
                   <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5]">Employee</th>
@@ -238,7 +238,7 @@ export default function Performance({ employees, isAdmin, currentUserEmail }: Pe
               </tbody>
             </table>
           ) : (
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse min-w-[800px]">
               <thead className="bg-[#FAFBFC] sticky top-0 z-10">
                 <tr>
                   <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5]">Employee</th>

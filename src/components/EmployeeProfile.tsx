@@ -27,27 +27,27 @@ export default function EmployeeProfile({ employee, onBack }: EmployeeProfilePro
       <div className="flex items-center gap-4">
         <button 
           onClick={onBack}
-          className="p-2 text-[#718096] hover:text-[#333] hover:bg-[#E2E8F0] rounded-full transition-colors"
+          className="p-2 text-[#718096] hover:text-[#333] hover:bg-[#E2E8F0] rounded-full transition-colors shrink-0"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <h1 className="text-[24px] font-bold text-[#333]">Employee Profile</h1>
+        <h1 className="text-[20px] md:text-[24px] font-bold text-[#333] truncate">Employee Profile</h1>
       </div>
 
       <div className="bg-[#FFFFFF] rounded-[8px] shadow-[0_1px_3px_rgba(0,0,0,0.1)] overflow-hidden">
-        <div className="p-8 border-b border-[#F0F2F5] flex items-start gap-6">
+        <div className="p-6 md:p-8 border-b border-[#F0F2F5] flex flex-col md:flex-row items-center md:items-start gap-6">
           <img 
             src={employee.avatarUrl} 
             alt={`${employee.firstName} ${employee.lastName}`} 
-            className="w-24 h-24 rounded-full object-cover border-4 border-[#F7FAFC] shadow-sm"
+            className="w-24 h-24 rounded-full object-cover border-4 border-[#F7FAFC] shadow-sm transform hover:scale-105 transition-transform"
           />
-          <div className="flex-1">
-            <div className="flex items-center justify-between">
+          <div className="flex-1 text-center md:text-left w-full">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
-                <h2 className="text-[24px] font-bold text-[#333]">{employee.firstName} {employee.lastName}</h2>
-                <div className="text-[16px] text-[#718096] mt-1">
+                <h2 className="text-[20px] md:text-[24px] font-bold text-[#333]">{employee.firstName} {employee.lastName}</h2>
+                <div className="text-[14px] md:text-[16px] text-[#718096] mt-1 flex flex-col md:flex-row items-center md:items-start gap-2 justify-center md:justify-start">
                   {employee.role} 
-                  {employee.employeeId && <span className="ml-2 px-2 py-0.5 bg-[#EDF2F7] text-[#4A5568] rounded text-[12px] font-medium align-middle">ID: {employee.employeeId}</span>}
+                  {employee.employeeId && <span className="px-2 py-0.5 bg-[#EDF2F7] text-[#4A5568] rounded text-[12px] font-medium">ID: {employee.employeeId}</span>}
                 </div>
               </div>
               <span className={`px-[12px] py-[6px] inline-flex text-[12px] font-semibold rounded-[12px] uppercase ${getStatusColor(employee.status)}`}>
@@ -55,7 +55,7 @@ export default function EmployeeProfile({ employee, onBack }: EmployeeProfilePro
               </span>
             </div>
             
-            <div className="flex items-center gap-6 mt-6">
+            <div className="flex flex-wrap items-center gap-4 mt-6 justify-center md:justify-start">
               <div className="flex items-center gap-2 text-[14px] text-[#718096]">
                 <Mail className="w-4 h-4" />
                 {employee.email}
@@ -72,8 +72,8 @@ export default function EmployeeProfile({ employee, onBack }: EmployeeProfilePro
           </div>
         </div>
 
-        <div className="p-8">
-          <div className="grid grid-cols-2 gap-8">
+        <div className="p-6 md:p-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
               <h3 className="text-[16px] font-semibold text-[#333] mb-4">Contact Information</h3>
               <div className="space-y-4">
