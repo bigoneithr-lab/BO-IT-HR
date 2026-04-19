@@ -30,6 +30,7 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [dbError, setDbError] = useState<string | null>(null);
   const [appUserStatus, setAppUserStatus] = useState<'loading' | 'pending' | 'approved' | 'admin'>('loading');
   const [accessCodeInput, setAccessCodeInput] = useState('');
   const [codeError, setCodeError] = useState('');
@@ -55,6 +56,7 @@ export default function App() {
         await getDocFromServer(doc(db, 'test', 'connection'));
       } catch (error) {
         if (error instanceof Error && error.message.includes('the client is offline')) {
+          setDbError("Database is offline. Please enable Firestore Database in the Firebase Console.");
           console.error("Please check your Firebase configuration.");
         }
       }
@@ -243,6 +245,28 @@ export default function App() {
     setSelectedEmployeeId(employee.id);
     setCurrentView('profile');
   };
+
+  if (dbError) {
+    return (
+      <div className="flex h-screen flex-col items-center justify-center bg-[#F0F2F5] p-6 text-center font-sans text-[#333]">
+        <div className="bg-[#FFFFFF] p-8 rounded-[8px] border-l-4 border-[#C53030] shadow-[0_4px_12px_rgba(0,0,0,0.15)] max-w-md w-full text-center">
+          <h2 className="text-[20px] font-bold text-[#C53030] mb-4">Database Connection Error</h2>
+          <p className="text-[#4A5568] text-[14px] mb-6">{dbError}</p>
+          <div className="bg-[#F7FAFC] p-4 text-left rounded-[4px] text-[13px] border border-[#E2E8F0]">
+            <p className="font-bold mb-2">How to fix this:</p>
+            <ol className="list-decimal pl-4 space-y-1 text-[#718096]">
+              <li>Go to <a href="https://console.firebase.google.com" className="text-[#4A90E2] underline" target="_blank" rel="noopener noreferrer">Firebase Console</a></li>
+              <li>Open your project</li>
+              <li>Click <strong>Firestore Database</strong> in the left menu</li>
+              <li>Click <strong>Create database</strong></li>
+              <li>Start in <strong>Test mode</strong></li>
+              <li>Refresh this page</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!isAuthReady) {
     return <div className="flex h-screen items-center justify-center bg-[#F0F2F5] text-[#333]">Loading...</div>;
