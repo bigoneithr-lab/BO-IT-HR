@@ -278,6 +278,7 @@ export default function Settings({ settings, isAdmin }: SettingsProps) {
           )}
         </form>
       </div>
+
     </motion.div>
   );
 }
