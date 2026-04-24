@@ -21,7 +21,14 @@ import Attendance from './components/Attendance';
 import { Employee, Department, Applicant, CompanySettings } from './types';
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<'dashboard' | 'employees' | 'access-requests' | 'profile' | 'time-off' | 'departments' | 'ai-assistant' | 'recruitment' | 'settings' | 'payroll' | 'performance' | 'documents' | 'attendance'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'employees' | 'access-requests' | 'profile' | 'time-off' | 'departments' | 'ai-assistant' | 'recruitment' | 'settings' | 'payroll' | 'performance' | 'documents' | 'attendance'>(() => {
+    return (localStorage.getItem('hr_currentView') || 'dashboard') as any;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('hr_currentView', currentView);
+  }, [currentView]);
+
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [applicants, setApplicants] = useState<Applicant[]>([]);
