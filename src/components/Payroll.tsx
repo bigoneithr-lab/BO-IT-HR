@@ -45,7 +45,7 @@ export default function Payroll({ employees, isAdmin, settings, currentUserEmail
           const data = doc.data();
           if (data.status === 'Absent') absences += 1;
           if (data.status === 'Half Day') absences += 0.5;
-          if (data.isLate) lateDaysCount += 1;
+          if (data.isLate || data.status === 'Late') lateDaysCount += 1;
         });
         
         setFormData(prev => ({
@@ -87,7 +87,26 @@ export default function Payroll({ employees, isAdmin, settings, currentUserEmail
   const calculateSalary = () => {
     if (!selectedEmployee) return null;
 
-    const baseSalary = isManager ? 25000 : 17000;
+    const fullBaseSalary = isManager ? 25000 : 17000;
+    
+    // Check if joined this month
+    const joinDateObj = new Date(selectedEmployee.joinDate);
+    const [slipYear, slipMonth] = formData.month.split('-').map(Number);
+    const joinYear = joinDateObj.getFullYear();
+    const joinMonth = joinDateObj.getMonth() + 1;
+    
+    let baseSalary = fullBaseSalary;
+    let joinedMidMonth = false;
+    let workedDaysThisMonth = 30;
+    
+    if (joinYear === slipYear && joinMonth === slipMonth) {
+      const daysInMonth = new Date(slipYear, slipMonth, 0).getDate();
+      const joinDay = joinDateObj.getDate();
+      workedDaysThisMonth = Math.max(0, daysInMonth - joinDay + 1);
+      baseSalary = Math.round((fullBaseSalary / daysInMonth) * workedDaysThisMonth);
+      joinedMidMonth = true;
+    }
+
     const allowances = {
       attendance: 0,
       dressCode: 0,
@@ -96,7 +115,7 @@ export default function Payroll({ employees, isAdmin, settings, currentUserEmail
       ownSales: 0
     };
     const penaltyDays = formData.lateDaysCount >= 3 ? formData.lateDaysCount - 2 : 0;
-    const deductionPerDay = baseSalary / 30;
+    const deductionPerDay = fullBaseSalary / 30;
 
     const deductions = {
       absences: 0,
@@ -116,7 +135,6 @@ export default function Payroll({ employees, isAdmin, settings, currentUserEmail
     }
 
     if (isProbation && formData.absentDays > 0) {
-      const deductionPerDay = baseSalary / 30;
       deductions.absences = Math.round(formData.absentDays * deductionPerDay);
     }
 
@@ -124,7 +142,7 @@ export default function Payroll({ employees, isAdmin, settings, currentUserEmail
     const totalDeductions = deductions.absences + deductions.lateDeduction;
     const netSalary = Math.max(0, baseSalary + totalAllowances - totalDeductions);
 
-    return { baseSalary, allowances, deductions, netSalary };
+    return { baseSalary, allowances, deductions, netSalary, joinedMidMonth, workedDaysThisMonth };
   };
 
   const handleEmployeeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -377,8 +395,15 @@ export default function Payroll({ employees, isAdmin, settings, currentUserEmail
                   {selectedEmployee && (
                     <div className="bg-[#F7FAFC] border border-[#E2E8F0] rounded-[8px] p-5 space-y-4">
                       <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3">
-                        <span className="text-[14px] font-medium text-[#333]">Base Salary ({isManager ? 'Manager' : 'Employee'})</span>
-                        <span className="text-[14px] font-bold text-[#333]">{formatCurrency(isManager ? 25000 : 17000)}</span>
+                        <div>
+                          <span className="text-[14px] font-medium text-[#333] block">Base Salary ({isManager ? 'Manager' : 'Employee'})</span>
+                          {currentCalc?.joinedMidMonth && (
+                            <span className="text-[12px] text-[#A0AEC0]">Prorated ({currentCalc.workedDaysThisMonth} days worked)</span>
+                          )}
+                        </div>
+                        <span className="text-[14px] font-bold text-[#333]">
+                          {formatCurrency(currentCalc?.baseSalary || (isManager ? 25000 : 17000))}
+                        </span>
                       </div>
 
                       {isManager ? (
