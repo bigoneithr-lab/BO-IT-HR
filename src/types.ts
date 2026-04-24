@@ -19,6 +19,7 @@ export interface AttendanceRecord {
   status: 'Present' | 'Absent' | 'Half Day' | 'On Leave' | 'Late' | 'Off Day';
   checkIn?: string;
   checkOut?: string;
+  checkInMethod?: 'auto' | 'manual';
   isLate?: boolean;
   lateMinutes?: number;
   markedBy: string;

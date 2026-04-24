@@ -14,7 +14,9 @@ interface AttendanceProps {
 }
 
 export default function Attendance({ employees, isAdmin, settings, currentUserEmail }: AttendanceProps) {
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const getTodayBD = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Dhaka' });
+
+  const [selectedDate, setSelectedDate] = useState<string>(getTodayBD());
   const [attendance, setAttendance] = useState<Record<string, AttendanceRecord>>({});
 
   useEffect(() => {
@@ -87,6 +89,7 @@ export default function Attendance({ employees, isAdmin, settings, currentUserEm
         lateMinutes,
         status: attendance[employeeId]?.status || 'Present', // Default to present if setting check-in
         markedBy: auth.currentUser?.email || 'Admin',
+        checkInMethod: 'manual',
         updatedAt: new Date().toISOString()
       }, { merge: true });
     } catch (error) {
@@ -100,9 +103,17 @@ export default function Attendance({ employees, isAdmin, settings, currentUserEm
   const handleSelfCheckIn = async () => {
     if (!currentEmployee) return;
     
-    const now = new Date();
-    const checkInTime = now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
-    const todayDate = now.toISOString().split('T')[0];
+    let now = new Date();
+    try {
+      const response = await fetch('https://worldtimeapi.org/api/timezone/Asia/Dhaka');
+      const data = await response.json();
+      now = new Date(data.datetime);
+    } catch (error) {
+      console.warn("Failed to fetch BD time from internet, falling back to local time", error);
+    }
+
+    const checkInTime = now.toLocaleTimeString('en-US', { timeZone: 'Asia/Dhaka', hour12: false, hour: '2-digit', minute: '2-digit' });
+    const todayDate = now.toLocaleDateString('en-CA', { timeZone: 'Asia/Dhaka' }); // YYYY-MM-DD format
     
     const recordId = `${currentEmployee.id}_${todayDate}`;
     const month = todayDate.substring(0, 7);
@@ -117,9 +128,10 @@ export default function Attendance({ employees, isAdmin, settings, currentUserEm
         checkIn: checkInTime,
         isLate,
         lateMinutes,
-        status: 'Present',
+        status: isLate ? 'Late' : 'Present', // Auto status change
         markedBy: currentEmployee.email,
-        updatedAt: new Date().toISOString()
+        checkInMethod: 'auto',
+        updatedAt: now.toISOString()
       }, { merge: true });
       
       // If they are checking in on a different date than currently selected, switch to today
@@ -186,7 +198,7 @@ export default function Attendance({ employees, isAdmin, settings, currentUserEm
           <p className="text-[13px] md:text-[14px] text-[#718096] mt-1">Track daily attendance to automatically sync with payroll.</p>
         </div>
         <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-          {currentEmployee && selectedDate === new Date().toISOString().split('T')[0] && !currentEmployeeRecord?.checkIn && (
+          {currentEmployee && selectedDate === getTodayBD() && !currentEmployeeRecord?.checkIn && (
             <button 
               onClick={handleSelfCheckIn}
               className="flex-1 sm:flex-none justify-center bg-[#48BB78] hover:bg-[#38A169] text-white px-4 py-2 rounded-[4px] text-[14px] font-medium flex items-center gap-2 transition-colors"
@@ -224,7 +236,7 @@ export default function Attendance({ employees, isAdmin, settings, currentUserEm
                 <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5]">Employee</th>
                 <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5]">Department</th>
                 <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5]">Status</th>
-                {isAdmin && <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5]">Check In</th>}
+                <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5]">Check In</th>
                 {isAdmin && <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5] text-right">Mark Attendance</th>}
               </tr>
             </thead>
@@ -255,16 +267,32 @@ export default function Attendance({ employees, isAdmin, settings, currentUserEm
                         )}
                       </div>
                     </td>
-                    {isAdmin && (
-                      <td className="px-6 py-4 border-b border-[#F0F2F5]">
-                        <input 
-                          type="time" 
-                          value={record?.checkIn || ''}
-                          onChange={(e) => handleCheckInChange(emp.id, e.target.value)}
-                          className={`text-[13px] border rounded-[4px] px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#4A90E2] ${record?.isLate ? 'border-[#FC8181] text-[#C53030]' : 'border-[#E2E8F0] text-[#4A5568]'}`}
-                        />
-                      </td>
-                    )}
+                    <td className="px-6 py-4 border-b border-[#F0F2F5]">
+                      {isAdmin ? (
+                        <div>
+                          <input 
+                            type="time" 
+                            value={record?.checkIn || ''}
+                            onChange={(e) => handleCheckInChange(emp.id, e.target.value)}
+                            className={`text-[13px] border rounded-[4px] px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#4A90E2] ${record?.isLate ? 'border-[#FC8181] text-[#C53030]' : 'border-[#E2E8F0] text-[#4A5568]'}`}
+                          />
+                          {record?.checkIn && (
+                            <div className="text-[10px] text-[#A0AEC0] mt-1 space-y-0.5">
+                              {record.checkInMethod === 'manual' ? (
+                                <span className="flex items-center gap-1 text-[#D69E2E]"><AlertCircle className="w-3 h-3"/> Edited Manually</span>
+                              ) : (
+                                <span className="flex items-center gap-1 text-[#38A169]"><CheckCircle2 className="w-3 h-3"/> Auto (Internet Time)</span>
+                              )}
+                              {record.markedBy !== emp.email && <span className="block italic truncate overflow-hidden max-w-[120px]" title={record.markedBy}>by {record.markedBy}</span>}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <span className={`text-[13px] font-medium ${record?.isLate ? 'text-[#C53030]' : 'text-[#4A5568]'}`}>
+                          {record?.checkIn || '-'}
+                        </span>
+                      )}
+                    </td>
                     {isAdmin && (
                       <td className="px-6 py-4 border-b border-[#F0F2F5] text-right">
                         <select 
