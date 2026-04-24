@@ -21,12 +21,34 @@ import Attendance from './components/Attendance';
 import { Employee, Department, Applicant, CompanySettings } from './types';
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<'dashboard' | 'employees' | 'access-requests' | 'profile' | 'time-off' | 'departments' | 'ai-assistant' | 'recruitment' | 'settings' | 'payroll' | 'performance' | 'documents' | 'attendance'>(() => {
-    return (localStorage.getItem('hr_currentView') || 'dashboard') as any;
+  type ViewType = 'dashboard' | 'employees' | 'access-requests' | 'profile' | 'time-off' | 'departments' | 'ai-assistant' | 'recruitment' | 'settings' | 'payroll' | 'performance' | 'documents' | 'attendance';
+
+  const [currentView, setCurrentView] = useState<ViewType>(() => {
+    try {
+      const hash = window.location.hash.replace('#', '');
+      const validViews = ['dashboard', 'employees', 'access-requests', 'profile', 'time-off', 'departments', 'ai-assistant', 'recruitment', 'settings', 'payroll', 'performance', 'documents', 'attendance'];
+      if (hash && validViews.includes(hash)) {
+        return hash as ViewType;
+      }
+    } catch (e) {
+      // Ignored
+    }
+    return 'dashboard';
   });
 
   useEffect(() => {
-    localStorage.setItem('hr_currentView', currentView);
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace('#', '') as ViewType;
+      const validViews = ['dashboard', 'employees', 'access-requests', 'profile', 'time-off', 'departments', 'ai-assistant', 'recruitment', 'settings', 'payroll', 'performance', 'documents', 'attendance'];
+      if (validViews.includes(hash) && hash !== currentView) {
+        setCurrentView(hash);
+      }
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    window.location.hash = currentView; // Keep it updated
+
+    return () => window.removeEventListener('hashchange', handleHashChange);
   }, [currentView]);
 
   const [employees, setEmployees] = useState<Employee[]>([]);
