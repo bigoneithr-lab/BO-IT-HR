@@ -34,7 +34,7 @@ jobs:
         run: npm install
         
       - name: Build
-        run: npm run build
+        run: npm run build -- --base=/BO-IT-HR/
         
       - name: Setup Pages
         uses: actions/configure-pages@v4
