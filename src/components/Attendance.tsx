@@ -22,7 +22,15 @@ export default function Attendance({ employees, isAdmin, settings, currentUserEm
   useEffect(() => {
     if (!selectedDate) return;
     
-    const q = query(collection(db, 'attendance'), where('date', '==', selectedDate));
+    let q;
+    if (isAdmin) {
+      q = query(collection(db, 'attendance'), where('date', '==', selectedDate));
+    } else {
+      const currentEmp = employees.find(e => e.email === currentUserEmail);
+      if (!currentEmp) return;
+      q = query(collection(db, 'attendance'), where('date', '==', selectedDate), where('employeeId', '==', currentEmp.id));
+    }
+    
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const records: Record<string, AttendanceRecord> = {};
       snapshot.forEach(doc => {
