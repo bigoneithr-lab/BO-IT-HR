@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Calendar as CalendarIcon, CheckCircle2, XCircle, Clock, CheckSquare } from 'lucide-react';
+import { Calendar as CalendarIcon, CheckCircle2, XCircle, Clock, CheckSquare, AlertCircle, Coffee } from 'lucide-react';
 import { collection, onSnapshot, setDoc, doc, query, where } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { handleFirestoreError, OperationType } from '../lib/firebase-utils';
@@ -168,6 +168,8 @@ export default function Attendance({ employees, isAdmin, settings, currentUserEm
       case 'Absent': return <span className="px-[10px] py-[4px] inline-flex items-center gap-1 text-[11px] font-semibold rounded-[12px] uppercase bg-[#FFF5F5] text-[#C53030]"><XCircle className="w-3 h-3"/> Absent</span>;
       case 'Half Day': return <span className="px-[10px] py-[4px] inline-flex items-center gap-1 text-[11px] font-semibold rounded-[12px] uppercase bg-[#FEFCBF] text-[#975A16]"><Clock className="w-3 h-3"/> Half Day</span>;
       case 'On Leave': return <span className="px-[10px] py-[4px] inline-flex items-center gap-1 text-[11px] font-semibold rounded-[12px] uppercase bg-[#EBF4FF] text-[#2B6CB0]"><CalendarIcon className="w-3 h-3"/> On Leave</span>;
+      case 'Late': return <span className="px-[10px] py-[4px] inline-flex items-center gap-1 text-[11px] font-semibold rounded-[12px] uppercase bg-[#FFEDD5] text-[#C2410C]"><AlertCircle className="w-3 h-3"/> Late</span>;
+      case 'Off Day': return <span className="px-[10px] py-[4px] inline-flex items-center gap-1 text-[11px] font-semibold rounded-[12px] uppercase bg-[#F1F5F9] text-[#475569]"><Coffee className="w-3 h-3"/> Off Day</span>;
       default: return <span className="px-[10px] py-[4px] inline-flex text-[11px] font-semibold rounded-[12px] uppercase bg-[#EDF2F7] text-[#4A5568]">Not Marked</span>;
     }
   };
@@ -275,6 +277,8 @@ export default function Attendance({ employees, isAdmin, settings, currentUserEm
                           <option value="Absent">Absent</option>
                           <option value="Half Day">Half Day</option>
                           <option value="On Leave">On Leave</option>
+                          <option value="Late">Late</option>
+                          <option value="Off Day">Off Day</option>
                         </select>
                       </td>
                     )}

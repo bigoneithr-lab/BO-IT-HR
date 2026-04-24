@@ -16,7 +16,7 @@ export interface AttendanceRecord {
   employeeId: string;
   date: string; // YYYY-MM-DD
   month: string; // YYYY-MM
-  status: 'Present' | 'Absent' | 'Half Day' | 'On Leave';
+  status: 'Present' | 'Absent' | 'Half Day' | 'On Leave' | 'Late' | 'Off Day';
   checkIn?: string;
   checkOut?: string;
   isLate?: boolean;
