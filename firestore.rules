@@ -15,7 +15,7 @@ service cloud.firestore {
     }
 
     function isApproved() {
-      return isAdmin() || (isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'approved');
+      return isAdmin() || (isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'approved');
     }
 
     match /users/{userId} {

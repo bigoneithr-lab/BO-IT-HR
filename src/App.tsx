@@ -160,19 +160,22 @@ export default function App() {
       }
     );
 
-    const unsubscribeApp = onSnapshot(
-      collection(db, 'applicants'),
-      (snapshot) => {
-        const apps: Applicant[] = [];
-        snapshot.forEach((doc) => {
-          apps.push({ id: doc.id, ...doc.data() } as Applicant);
-        });
-        setApplicants(apps);
-      },
-      (error) => {
-        handleFirestoreError(error, OperationType.LIST, 'applicants');
-      }
-    );
+    let unsubscribeApp: (() => void) | undefined;
+    if (userRole === 'admin' || userRole === 'manager') {
+      unsubscribeApp = onSnapshot(
+        collection(db, 'applicants'),
+        (snapshot) => {
+          const apps: Applicant[] = [];
+          snapshot.forEach((doc) => {
+            apps.push({ id: doc.id, ...doc.data() } as Applicant);
+          });
+          setApplicants(apps);
+        },
+        (error) => {
+          handleFirestoreError(error, OperationType.LIST, 'applicants');
+        }
+      );
+    }
 
     const unsubscribeSettings = onSnapshot(
       doc(db, 'settings', 'company'),
@@ -195,7 +198,7 @@ export default function App() {
     return () => {
       unsubscribeEmp();
       unsubscribeDept();
-      unsubscribeApp();
+      if (unsubscribeApp) unsubscribeApp();
       unsubscribeSettings();
     };
   }, [isAuthReady, user, appUserStatus]);
