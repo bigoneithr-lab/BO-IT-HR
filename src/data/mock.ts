@@ -10,7 +10,7 @@ export const initialEmployees: Employee[] = [
     department: 'Engineering',
     status: 'Active',
     joinDate: '2023-01-15',
-    avatarUrl: 'https://i.pravatar.cc/150?u=sarah'
+    avatarUrl: 'https://ui-avatars.com/api/?name=Sarah+Connor&background=E2E8F0&color=4A5568'
   },
   {
     id: '2',
@@ -21,7 +21,7 @@ export const initialEmployees: Employee[] = [
     department: 'Sales',
     status: 'Active',
     joinDate: '2010-03-01',
-    avatarUrl: 'https://i.pravatar.cc/150?u=michael'
+    avatarUrl: 'https://ui-avatars.com/api/?name=Michael+Scott&background=E2E8F0&color=4A5568'
   },
   {
     id: '3',
@@ -32,7 +32,7 @@ export const initialEmployees: Employee[] = [
     department: 'Sales',
     status: 'On Leave',
     joinDate: '2012-05-14',
-    avatarUrl: 'https://i.pravatar.cc/150?u=jim'
+    avatarUrl: 'https://ui-avatars.com/api/?name=Jim+Halpert&background=E2E8F0&color=4A5568'
   },
   {
     id: '4',
@@ -43,7 +43,7 @@ export const initialEmployees: Employee[] = [
     department: 'Administration',
     status: 'Active',
     joinDate: '2011-02-10',
-    avatarUrl: 'https://i.pravatar.cc/150?u=pam'
+    avatarUrl: 'https://ui-avatars.com/api/?name=Pam+Beesly&background=E2E8F0&color=4A5568'
   },
   {
     id: '5',
@@ -54,7 +54,7 @@ export const initialEmployees: Employee[] = [
     department: 'Sales',
     status: 'Active',
     joinDate: '2009-08-23',
-    avatarUrl: 'https://i.pravatar.cc/150?u=dwight'
+    avatarUrl: 'https://ui-avatars.com/api/?name=Dwight+Schrute&background=E2E8F0&color=4A5568'
   },
   {
     id: '6',
@@ -65,6 +65,6 @@ export const initialEmployees: Employee[] = [
     department: 'Human Resources',
     status: 'Terminated',
     joinDate: '2008-11-05',
-    avatarUrl: 'https://i.pravatar.cc/150?u=toby'
+    avatarUrl: 'https://ui-avatars.com/api/?name=Toby+Flenderson&background=E2E8F0&color=4A5568'
   }
 ];

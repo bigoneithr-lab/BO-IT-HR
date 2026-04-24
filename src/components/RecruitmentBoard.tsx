@@ -107,7 +107,7 @@ export default function RecruitmentBoard({ applicants, departments }: Recruitmen
         department: 'TBD', // Default, can be edited later
         status: 'Active',
         joinDate: new Date().toISOString().split('T')[0],
-        avatarUrl: `https://i.pravatar.cc/150?u=${Math.random()}`,
+        avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(applicant.firstName + ' ' + applicant.lastName)}&background=E2E8F0&color=4A5568`,
         phone: applicant.phone || '',
       });
 

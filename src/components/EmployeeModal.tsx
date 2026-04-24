@@ -21,7 +21,7 @@ export default function EmployeeModal({ isOpen, onClose, employee, departments, 
     department: '',
     status: 'Active',
     joinDate: new Date().toISOString().split('T')[0],
-    avatarUrl: `https://i.pravatar.cc/150?u=${Math.random()}`
+    avatarUrl: `https://ui-avatars.com/api/?name=New+Employee&background=E2E8F0&color=4A5568`
   });
 
   useEffect(() => {
