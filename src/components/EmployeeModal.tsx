@@ -32,8 +32,14 @@ export default function EmployeeModal({ isOpen, onClose, employee, departments, 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Auto-generate avatar with actual name instead of "New Employee"
+    const finalAvatarUrl = employee?.avatarUrl || 
+      `https://ui-avatars.com/api/?name=${encodeURIComponent((formData.firstName || '') + ' ' + (formData.lastName || ''))}&background=E2E8F0&color=4A5568`;
+    
     onSave({
       ...formData,
+      avatarUrl: finalAvatarUrl,
       id: employee?.id || Math.random().toString(36).substr(2, 9),
     } as Employee);
   };
