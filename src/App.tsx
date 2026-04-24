@@ -87,6 +87,12 @@ export default function App() {
   const [userRole, setUserRole] = useState<'admin' | 'manager' | 'employee'>('employee');
 
   useEffect(() => {
+    if (userRole === 'employee' && currentView === 'dashboard') {
+      setCurrentView('attendance');
+    }
+  }, [userRole, currentView]);
+
+  useEffect(() => {
     if (!user) return;
 
     if (user.email === 'bigoneithr@gmail.com' || user.email === 'bigoneit9326@gmail.com') {
@@ -401,7 +407,7 @@ export default function App() {
           onMenuClick={() => setIsMobileMenuOpen(true)} 
         />
         <main className="flex-1 overflow-y-auto p-4 md:p-8">
-          {currentView === 'dashboard' && <Dashboard employees={employees} departments={departments} />}
+          {currentView === 'dashboard' && userRole !== 'employee' && <Dashboard employees={employees} departments={departments} />}
           {currentView === 'employees' && <EmployeeList employees={employees} departments={departments} onViewProfile={handleViewProfile} />}
           {currentView === 'recruitment' && <RecruitmentBoard applicants={applicants} departments={departments} />}
           {currentView === 'access-requests' && userRole === 'admin' && <AccessRequests />}

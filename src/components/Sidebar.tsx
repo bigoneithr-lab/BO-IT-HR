@@ -13,7 +13,7 @@ interface SidebarProps {
 
 export default function Sidebar({ currentView, onViewChange, onLogout, userRole, settings, isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps) {
   const allNavItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin', 'manager', 'employee'] as string[] },
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin', 'manager'] as string[] },
     { id: 'employees', label: 'Employee Directory', icon: Users, roles: ['admin', 'manager'] as string[] },
     { id: 'attendance', label: 'Attendance', icon: Clock, roles: ['admin', 'manager', 'employee'] as string[] },
     { id: 'recruitment', label: 'Recruitment', icon: ClipboardList, roles: ['admin', 'manager'] as string[] },
