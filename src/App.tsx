@@ -44,6 +44,12 @@ export default function App() {
   const [loginPassword, setLoginPassword] = useState('');
   const [isEmailLogin, setIsEmailLogin] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [globalError, setGlobalError] = useState<string | null>(null);
+
+  // Expose global error setter
+  useEffect(() => {
+    (window as any).setGlobalError = setGlobalError;
+  }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -357,7 +363,14 @@ export default function App() {
         isMobileMenuOpen={isMobileMenuOpen}
         setIsMobileMenuOpen={setIsMobileMenuOpen}
       />
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+        {globalError && (
+          <div className="absolute top-0 left-0 right-0 z-50 bg-red-100 border-b border-red-400 text-red-700 px-4 py-3 text-xs w-full">
+            <strong>Firestore Error Detected:</strong>
+            <pre className="mt-2 overflow-auto max-h-32 bg-white/50 p-2 rounded">{globalError}</pre>
+            <button onClick={() => setGlobalError(null)} className="absolute top-2 right-2 text-red-900 font-bold px-2">X</button>
+          </div>
+        )}
         <Header 
           user={user} 
           onMenuClick={() => setIsMobileMenuOpen(true)} 
