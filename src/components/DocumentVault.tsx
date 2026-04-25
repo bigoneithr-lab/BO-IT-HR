@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { FolderLock, UploadCloud, FileText, Download, Trash2, X, Search, Filter, Loader2, AlertTriangle } from 'lucide-react';
+import { FolderLock, UploadCloud, FileText, Download, Trash2, X, Search, Filter, Loader2, AlertTriangle, ChevronLeft, Folder } from 'lucide-react';
 import { collection, onSnapshot, addDoc, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { handleFirestoreError, OperationType } from '../lib/firebase-utils';
@@ -19,6 +19,7 @@ export default function DocumentVault({ employees, isAdmin, currentUserEmail }: 
   const [uploadError, setUploadError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>('All');
+  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -126,6 +127,39 @@ export default function DocumentVault({ employees, isAdmin, currentUserEmail }: 
     return true;
   });
 
+  let view = 'documents';
+  let displayedDocuments = filteredDocuments;
+  const folders: { id: string, name: string, count: number, type: 'employee' | 'office', avatarUrl?: string }[] = [];
+
+  if (isAdmin && selectedFolderId === null) {
+      view = 'folders';
+      const grouped = new Map<string, number>();
+      filteredDocuments.forEach(doc => {
+          const fid = (!doc.employeeId || doc.category === 'Office Document') ? 'office' : doc.employeeId;
+          grouped.set(fid, (grouped.get(fid) || 0) + 1);
+      });
+      
+      grouped.forEach((count, key) => {
+          if (key === 'office') {
+              folders.push({ id: 'office', name: 'Office Documents', count, type: 'office' });
+          } else {
+              const emp = employees.find(e => e.id === key);
+              if (emp) {
+                 folders.push({ id: key, name: `${emp.firstName} ${emp.lastName}`, count, type: 'employee', avatarUrl: emp.avatarUrl });
+              }
+          }
+      });
+      
+      folders.sort((a, b) => a.name.localeCompare(b.name));
+  } else if (isAdmin && selectedFolderId !== null) {
+      displayedDocuments = filteredDocuments.filter(doc => {
+          if (selectedFolderId === 'office') {
+              return !doc.employeeId || doc.category === 'Office Document';
+          }
+          return doc.employeeId === selectedFolderId && doc.category !== 'Office Document';
+      });
+  }
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 10 }}
@@ -176,64 +210,107 @@ export default function DocumentVault({ employees, isAdmin, currentUserEmail }: 
         </div>
 
         <div className="flex-1 overflow-auto p-6">
-          {filteredDocuments.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-[#718096]">
-              <FolderLock className="w-12 h-12 text-[#A0AEC0] mb-3" />
-              <p className="text-[15px] font-medium text-[#4A5568]">No documents found</p>
-              <p className="text-[13px] mt-1">Upload a document to securely store it in the vault.</p>
+          {isAdmin && selectedFolderId !== null && (
+            <div className="mb-4">
+              <button 
+                onClick={() => setSelectedFolderId(null)}
+                className="flex items-center gap-2 text-[#4A90E2] hover:text-[#3A80D2] transition-colors text-[14px] font-medium"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                Back to Folders
+              </button>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredDocuments.map(doc => {
-                const emp = employees.find(e => e.id === doc.employeeId);
-                return (
-                  <div key={doc.id} className="border border-[#E2E8F0] rounded-[8px] p-4 hover:border-[#CBD5E0] hover:shadow-sm transition-all bg-white group">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="w-10 h-10 rounded-[6px] bg-[#EBF8FF] flex items-center justify-center shrink-0">
-                        <FileText className="w-5 h-5 text-[#4A90E2]" />
-                      </div>
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <a 
-                          href={doc.dataUrl}
-                          download={doc.name}
-                          className="p-1.5 text-[#718096] hover:text-[#4A90E2] hover:bg-[#EBF8FF] rounded-[4px] transition-colors"
-                          title="Download"
-                        >
-                          <Download className="w-4 h-4" />
-                        </a>
-                        {(isAdmin || doc.employeeId === employees.find(e => e.email === currentUserEmail)?.id) && (
-                          <button 
-                            onClick={() => handleDelete(doc.id, doc.name)}
-                            className="p-1.5 text-[#718096] hover:text-[#C53030] hover:bg-[#FFF5F5] rounded-[4px] transition-colors"
-                            title="Delete"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        )}
-                      </div>
+          )}
+
+          {view === 'folders' ? (
+            folders.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-[#718096]">
+                <FolderLock className="w-12 h-12 text-[#A0AEC0] mb-3" />
+                <p className="text-[15px] font-medium text-[#4A5568]">No folders found</p>
+                <p className="text-[13px] mt-1">Upload a document to securely store it in the vault.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {folders.map(folder => (
+                  <div 
+                    key={folder.id} 
+                    onClick={() => setSelectedFolderId(folder.id)}
+                    className="border border-[#E2E8F0] rounded-[8px] p-4 hover:border-[#4A90E2] hover:shadow-sm transition-all bg-white group cursor-pointer flex items-center gap-4"
+                  >
+                    <div className="w-12 h-12 rounded-[8px] bg-[#EBF8FF] flex items-center justify-center shrink-0">
+                      {folder.type === 'office' ? <FolderLock className="w-6 h-6 text-[#4A90E2]" /> : <Folder className="w-6 h-6 text-[#4A90E2]" />}
                     </div>
-                    <div className="min-w-0">
-                      <h3 className="text-[14px] font-semibold text-[#333] truncate" title={doc.name}>{doc.name}</h3>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-[11px] font-medium px-2 py-0.5 bg-[#EDF2F7] text-[#4A5568] rounded-[4px]">
-                          {doc.category}
-                        </span>
-                        <span className="text-[12px] text-[#A0AEC0]">{formatBytes(doc.size)}</span>
-                      </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-[15px] font-bold text-[#333] truncate">{folder.name}</h3>
+                      <p className="text-[13px] text-[#A0AEC0] mt-0.5">{folder.count} document{folder.count !== 1 ? 's' : ''}</p>
                     </div>
-                    {isAdmin && emp && (
-                      <div className="mt-4 pt-3 border-t border-[#F0F2F5] flex items-center gap-2">
-                        <img src={emp.avatarUrl} alt="" className="w-5 h-5 rounded-full object-cover bg-[#E2E8F0]" />
-                        <span className="text-[12px] text-[#718096] truncate">{emp.firstName} {emp.lastName}</span>
-                      </div>
+                    {folder.avatarUrl && (
+                      <img src={folder.avatarUrl} alt="" className="w-8 h-8 rounded-full object-cover bg-[#E2E8F0]" />
                     )}
-                    <div className="mt-2 text-[11px] text-[#A0AEC0]">
-                      Uploaded: {new Date(doc.uploadedAt).toLocaleDateString()}
-                    </div>
                   </div>
-                );
-              })}
-            </div>
+                ))}
+              </div>
+            )
+          ) : (
+            displayedDocuments.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-[#718096]">
+                <FolderLock className="w-12 h-12 text-[#A0AEC0] mb-3" />
+                <p className="text-[15px] font-medium text-[#4A5568]">No documents found</p>
+                <p className="text-[13px] mt-1">Upload a document to securely store it in the vault.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {displayedDocuments.map(doc => {
+                  const emp = employees.find(e => e.id === doc.employeeId);
+                  return (
+                    <div key={doc.id} className="border border-[#E2E8F0] rounded-[8px] p-4 hover:border-[#CBD5E0] hover:shadow-sm transition-all bg-white group">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="w-10 h-10 rounded-[6px] bg-[#EBF8FF] flex items-center justify-center shrink-0">
+                          <FileText className="w-5 h-5 text-[#4A90E2]" />
+                        </div>
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <a 
+                            href={doc.dataUrl}
+                            download={doc.name}
+                            className="p-1.5 text-[#718096] hover:text-[#4A90E2] hover:bg-[#EBF8FF] rounded-[4px] transition-colors"
+                            title="Download"
+                          >
+                            <Download className="w-4 h-4" />
+                          </a>
+                          {(isAdmin || doc.employeeId === employees.find(e => e.email === currentUserEmail)?.id) && (
+                            <button 
+                              onClick={() => handleDelete(doc.id, doc.name)}
+                              className="p-1.5 text-[#718096] hover:text-[#C53030] hover:bg-[#FFF5F5] rounded-[4px] transition-colors"
+                              title="Delete"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="text-[14px] font-semibold text-[#333] truncate" title={doc.name}>{doc.name}</h3>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-[11px] font-medium px-2 py-0.5 bg-[#EDF2F7] text-[#4A5568] rounded-[4px]">
+                            {doc.category}
+                          </span>
+                          <span className="text-[12px] text-[#A0AEC0]">{formatBytes(doc.size)}</span>
+                        </div>
+                      </div>
+                      {isAdmin && selectedFolderId === null && emp && (
+                        <div className="mt-4 pt-3 border-t border-[#F0F2F5] flex items-center gap-2">
+                          <img src={emp.avatarUrl} alt="" className="w-5 h-5 rounded-full object-cover bg-[#E2E8F0]" />
+                          <span className="text-[12px] text-[#718096] truncate">{emp.firstName} {emp.lastName}</span>
+                        </div>
+                      )}
+                      <div className="mt-2 text-[11px] text-[#A0AEC0]">
+                        Uploaded: {new Date(doc.uploadedAt).toLocaleDateString()}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )
           )}
         </div>
       </div>
