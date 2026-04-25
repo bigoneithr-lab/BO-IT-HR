@@ -117,6 +117,9 @@ export default function DocumentVault({ employees, isAdmin, currentUserEmail }: 
       if (!currentUserEmp || doc.employeeId !== currentUserEmp.id) return false;
     }
     
+    // Only accessible by bigoneithr@gmail.com
+    if (doc.category === 'Office Document' && currentUserEmail !== 'bigoneithr@gmail.com') return false;
+
     if (filterCategory !== 'All' && doc.category !== filterCategory) return false;
     if (searchTerm && !doc.name.toLowerCase().includes(searchTerm.toLowerCase())) return false;
     
@@ -166,6 +169,7 @@ export default function DocumentVault({ employees, isAdmin, currentUserEmail }: 
               <option value="Contract">Contracts</option>
               <option value="ID">IDs & Passports</option>
               <option value="Tax Document">Tax Documents</option>
+              {currentUserEmail === 'bigoneithr@gmail.com' && <option value="Office Document">Office Document</option>}
               <option value="Other">Other</option>
             </select>
           </div>
@@ -250,7 +254,7 @@ export default function DocumentVault({ employees, isAdmin, currentUserEmail }: 
                 </button>
               </div>
               <div className="p-6 space-y-4">
-                {isAdmin && (
+                {isAdmin && formData.category !== 'Office Document' && (
                   <div>
                     <label className="block text-[12px] font-medium text-[#718096] uppercase tracking-[0.5px] mb-1">Employee</label>
                     <select 
@@ -284,6 +288,7 @@ export default function DocumentVault({ employees, isAdmin, currentUserEmail }: 
                     <option value="Contract">Contract</option>
                     <option value="ID">ID / Passport</option>
                     <option value="Tax Document">Tax Document</option>
+                    {currentUserEmail === 'bigoneithr@gmail.com' && <option value="Office Document">Office Document</option>}
                     <option value="Other">Other</option>
                   </select>
                 </div>
@@ -313,7 +318,7 @@ export default function DocumentVault({ employees, isAdmin, currentUserEmail }: 
 
                   <button 
                     onClick={() => fileInputRef.current?.click()}
-                    disabled={isUploading || (isAdmin && !formData.employeeId)}
+                    disabled={isUploading || (isAdmin && !formData.employeeId && formData.category !== 'Office Document')}
                     className="w-full border-2 border-dashed border-[#CBD5E0] hover:border-[#4A90E2] hover:bg-[#F7FAFC] disabled:opacity-50 disabled:hover:border-[#CBD5E0] disabled:hover:bg-transparent rounded-[8px] p-8 flex flex-col items-center justify-center gap-2 transition-all group"
                   >
                     {isUploading ? (

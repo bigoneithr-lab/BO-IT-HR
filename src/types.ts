@@ -6,7 +6,7 @@ export interface VaultDocument {
   name: string;
   dataUrl: string; // Base64 data
   type: string;
-  category: 'Contract' | 'ID' | 'Tax Document' | 'Other';
+  category: 'Contract' | 'ID' | 'Tax Document' | 'Other' | 'Office Document';
   uploadedAt: string;
   size: number;
 }
