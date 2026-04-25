@@ -219,6 +219,17 @@ export default function Attendance({ employees, isAdmin, settings, currentUserEm
     }
   };
 
+  const dailySummary = {
+    present: Object.values(attendance).filter(r => r.status === 'Present').length,
+    late: Object.values(attendance).filter(r => r.status === 'Late' || r.isLate).length,
+    absent: Object.values(attendance).filter(r => r.status === 'Absent').length,
+    halfDay: Object.values(attendance).filter(r => r.status === 'Half Day').length,
+    onLeave: Object.values(attendance).filter(r => r.status === 'On Leave').length,
+    offDay: Object.values(attendance).filter(r => r.status === 'Off Day').length,
+    total: employees.length,
+    notMarked: employees.length - Object.keys(attendance).length
+  };
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 10 }}
@@ -280,6 +291,39 @@ export default function Attendance({ employees, isAdmin, settings, currentUserEm
           )}
         </div>
       </div>
+
+      {viewMode === 'daily' && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+          <div className="bg-white p-3 rounded-[8px] border border-[#E2E8F0] shadow-sm">
+            <div className="text-[11px] text-[#718096] uppercase font-bold tracking-wider mb-1">Present</div>
+            <div className="text-[18px] font-bold text-[#2C7A7B]">{dailySummary.present}</div>
+          </div>
+          <div className="bg-white p-3 rounded-[8px] border border-[#E2E8F0] shadow-sm">
+            <div className="text-[11px] text-[#718096] uppercase font-bold tracking-wider mb-1">Late</div>
+            <div className="text-[18px] font-bold text-[#C2410C]">{dailySummary.late}</div>
+          </div>
+          <div className="bg-white p-3 rounded-[8px] border border-[#E2E8F0] shadow-sm">
+            <div className="text-[11px] text-[#718096] uppercase font-bold tracking-wider mb-1">Absent</div>
+            <div className="text-[18px] font-bold text-[#C53030]">{dailySummary.absent}</div>
+          </div>
+          <div className="bg-white p-3 rounded-[8px] border border-[#E2E8F0] shadow-sm">
+            <div className="text-[11px] text-[#718096] uppercase font-bold tracking-wider mb-1">Half Day</div>
+            <div className="text-[18px] font-bold text-[#975A16]">{dailySummary.halfDay}</div>
+          </div>
+          <div className="bg-white p-3 rounded-[8px] border border-[#E2E8F0] shadow-sm">
+            <div className="text-[11px] text-[#718096] uppercase font-bold tracking-wider mb-1">On Leave</div>
+            <div className="text-[18px] font-bold text-[#2B6CB0]">{dailySummary.onLeave}</div>
+          </div>
+          <div className="bg-white p-3 rounded-[8px] border border-[#E2E8F0] shadow-sm">
+            <div className="text-[11px] text-[#718096] uppercase font-bold tracking-wider mb-1">Off Day</div>
+            <div className="text-[18px] font-bold text-[#475569]">{dailySummary.offDay}</div>
+          </div>
+          <div className="bg-white p-3 rounded-[8px] border border-[#E2E8F0] shadow-sm">
+            <div className="text-[11px] text-[#718096] uppercase font-bold tracking-wider mb-1">Not Marked</div>
+            <div className="text-[18px] font-bold text-[#A0AEC0]">{dailySummary.notMarked}</div>
+          </div>
+        </div>
+      )}
 
       <div className="bg-[#FFFFFF] rounded-[8px] shadow-[0_1px_3px_rgba(0,0,0,0.1)] flex-1 overflow-hidden">
         <div className="overflow-x-auto h-full">
