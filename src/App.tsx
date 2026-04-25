@@ -405,6 +405,8 @@ export default function App() {
         <Header 
           user={user} 
           onMenuClick={() => setIsMobileMenuOpen(true)} 
+          employees={employees}
+          onEmployeeSelect={handleViewProfile}
         />
         <main className="flex-1 overflow-y-auto p-4 md:p-8">
           {currentView === 'dashboard' && userRole !== 'employee' && <Dashboard employees={employees} departments={departments} />}

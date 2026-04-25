@@ -1,16 +1,23 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Bell, Search, CheckCircle2, Clock, AlertCircle, Menu } from 'lucide-react';
+import { Bell, Search, CheckCircle2, Clock, AlertCircle, Menu, UserCircle } from 'lucide-react';
 import { User } from 'firebase/auth';
 import { motion, AnimatePresence } from 'motion/react';
+import { Employee } from '../types';
 
 interface HeaderProps {
   user: User | null;
   onMenuClick: () => void;
+  employees: Employee[];
+  onEmployeeSelect: (employee: Employee) => void;
 }
 
-export default function Header({ user, onMenuClick }: HeaderProps) {
+export default function Header({ user, onMenuClick, employees, onEmployeeSelect }: HeaderProps) {
   const [showNotifications, setShowNotifications] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLDivElement>(null);
 
   const initials = user?.email ? user.email.substring(0, 2).toUpperCase() : 'BO';
   const displayName = user?.displayName || 'BO-IT HR Admin';
@@ -20,6 +27,9 @@ export default function Header({ user, onMenuClick }: HeaderProps) {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setShowNotifications(false);
+      }
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setIsSearchFocused(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -32,6 +42,20 @@ export default function Header({ user, onMenuClick }: HeaderProps) {
     { id: 3, title: 'System Update', message: 'The HR system will undergo maintenance tonight at 12:00 AM.', time: '1d ago', unread: false, icon: AlertCircle, color: 'text-blue-500', bg: 'bg-blue-50' },
   ];
 
+  const filteredEmployees = searchTerm.trim() 
+    ? employees.filter(emp => 
+        `${emp.firstName} ${emp.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        emp.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        emp.role.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : [];
+
+  const handleSelectEmployee = (emp: Employee) => {
+    onEmployeeSelect(emp);
+    setSearchTerm('');
+    setIsSearchFocused(false);
+  };
+
   return (
     <header className="h-[64px] bg-[#FFFFFF] border-b border-[#E0E0E0] flex items-center justify-between px-4 md:px-8 shrink-0">
       <div className="flex items-center gap-4 flex-1">
@@ -43,15 +67,62 @@ export default function Header({ user, onMenuClick }: HeaderProps) {
         </button>
         
         <div className="flex-1 max-w-lg hidden md:block">
-          <div className="relative">
+          <div className="relative" ref={searchRef}>
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Search className="h-4 w-4 text-[#718096]" />
             </div>
             <input
               type="text"
               placeholder="Search employees, files, or tasks..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onFocus={() => setIsSearchFocused(true)}
               className="block w-full max-w-[300px] pl-10 pr-4 py-2 border border-[#E2E8F0] rounded-[4px] bg-[#F7FAFC] text-[#718096] placeholder-[#718096] focus:outline-none focus:ring-1 focus:ring-[#4A90E2] focus:border-[#4A90E2] text-[14px] transition-colors"
             />
+            <AnimatePresence>
+              {isSearchFocused && searchTerm.trim() && (
+                <motion.div
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 5 }}
+                  transition={{ duration: 0.1 }}
+                  className="absolute top-full left-0 mt-1 w-full max-w-[400px] bg-white border border-[#E2E8F0] rounded-[8px] shadow-[0_4px_20px_rgba(0,0,0,0.15)] z-50 overflow-hidden"
+                >
+                  <div className="max-h-[300px] overflow-y-auto">
+                    {filteredEmployees.length > 0 ? (
+                      <div>
+                        <div className="px-3 py-2 bg-[#FAFBFC] border-b border-[#E2E8F0] text-[11px] font-semibold text-[#718096] uppercase tracking-wider">
+                          Employees
+                        </div>
+                        {filteredEmployees.map(emp => (
+                          <div 
+                            key={emp.id}
+                            onClick={() => handleSelectEmployee(emp)}
+                            className="px-4 py-3 border-b border-[#F0F2F5] hover:bg-[#FAFBFC] cursor-pointer flex items-center gap-3 transition-colors"
+                          >
+                            {emp.avatarUrl ? (
+                              <img src={emp.avatarUrl} alt="" className="w-8 h-8 rounded-full object-cover bg-[#E2E8F0]" />
+                            ) : (
+                              <div className="w-8 h-8 rounded-full bg-[#EBF4FF] text-[#4A90E2] flex items-center justify-center">
+                                <UserCircle className="w-5 h-5" />
+                              </div>
+                            )}
+                            <div>
+                              <div className="text-[14px] font-medium text-[#333]">{emp.firstName} {emp.lastName}</div>
+                              <div className="text-[12px] text-[#718096]">{emp.role}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="px-4 py-8 text-center text-[#718096] text-[13px]">
+                        No employees found matching "{searchTerm}"
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </div>
