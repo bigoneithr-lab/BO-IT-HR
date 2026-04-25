@@ -17,31 +17,56 @@ export default function Attendance({ employees, isAdmin, settings, currentUserEm
   const getTodayBD = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Dhaka' });
 
   const [selectedDate, setSelectedDate] = useState<string>(getTodayBD());
+  const [viewMode, setViewMode] = useState<'daily' | 'monthly'>('daily');
   const [attendance, setAttendance] = useState<Record<string, AttendanceRecord>>({});
+  const [monthlyAttendance, setMonthlyAttendance] = useState<Record<string, AttendanceRecord[]>>({});
 
   useEffect(() => {
     if (!selectedDate) return;
     
     let q;
-    if (isAdmin) {
-      q = query(collection(db, 'attendance'), where('date', '==', selectedDate));
+    if (viewMode === 'daily') {
+      if (isAdmin) {
+        q = query(collection(db, 'attendance'), where('date', '==', selectedDate));
+      } else {
+        const currentEmp = employees.find(e => e.email === currentUserEmail);
+        if (!currentEmp) return;
+        q = query(collection(db, 'attendance'), where('date', '==', selectedDate), where('employeeId', '==', currentEmp.id));
+      }
+      
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const records: Record<string, AttendanceRecord> = {};
+        snapshot.forEach(doc => {
+          const data = doc.data() as AttendanceRecord;
+          records[data.employeeId] = { id: doc.id, ...data };
+        });
+        setAttendance(records);
+      }, (error) => handleFirestoreError(error, OperationType.LIST, 'attendance'));
+      
+      return () => unsubscribe();
     } else {
-      const currentEmp = employees.find(e => e.email === currentUserEmail);
-      if (!currentEmp) return;
-      q = query(collection(db, 'attendance'), where('date', '==', selectedDate), where('employeeId', '==', currentEmp.id));
+      const month = selectedDate.substring(0, 7);
+      if (isAdmin) {
+        q = query(collection(db, 'attendance'), where('month', '==', month));
+      } else {
+        const currentEmp = employees.find(e => e.email === currentUserEmail);
+        if (!currentEmp) return;
+        q = query(collection(db, 'attendance'), where('month', '==', month), where('employeeId', '==', currentEmp.id));
+      }
+      
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const records: Record<string, AttendanceRecord[]> = {};
+        snapshot.forEach(doc => {
+          const data = doc.data() as AttendanceRecord;
+          if (!records[data.employeeId]) records[data.employeeId] = [];
+          records[data.employeeId].push({ id: doc.id, ...data });
+        });
+        setMonthlyAttendance(records);
+      }, (error) => handleFirestoreError(error, OperationType.LIST, 'attendance'));
+      
+      return () => unsubscribe();
     }
-    
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const records: Record<string, AttendanceRecord> = {};
-      snapshot.forEach(doc => {
-        const data = doc.data() as AttendanceRecord;
-        records[data.employeeId] = { id: doc.id, ...data };
-      });
-      setAttendance(records);
-    }, (error) => handleFirestoreError(error, OperationType.LIST, 'attendance'));
-    
-    return () => unsubscribe();
-  }, [selectedDate]);
+  }, [selectedDate, viewMode, employees, isAdmin, currentUserEmail]);
 
   const handleStatusChange = async (employeeId: string, status: AttendanceRecord['status']) => {
     if (!isAdmin) return;
@@ -202,11 +227,25 @@ export default function Attendance({ employees, isAdmin, settings, currentUserEm
     >
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-[20px] md:text-[24px] font-bold text-[#333]">Daily Attendance</h1>
-          <p className="text-[13px] md:text-[14px] text-[#718096] mt-1">Track daily attendance to automatically sync with payroll.</p>
+          <h1 className="text-[20px] md:text-[24px] font-bold text-[#333]">Attendance</h1>
+          <p className="text-[13px] md:text-[14px] text-[#718096] mt-1">Track attendance and view monthly summaries.</p>
         </div>
         <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-          {currentEmployee && selectedDate === getTodayBD() && !currentEmployeeRecord?.checkIn && (
+          <div className="flex bg-[#F0F2F5] p-1 rounded-[6px] mr-2">
+            <button
+              onClick={() => setViewMode('daily')}
+              className={`px-4 py-1.5 text-[13px] font-medium rounded-[4px] transition-colors ${viewMode === 'daily' ? 'bg-white text-[#333] shadow-sm' : 'text-[#718096] hover:text-[#333]'}`}
+            >
+              Daily
+            </button>
+            <button
+              onClick={() => setViewMode('monthly')}
+              className={`px-4 py-1.5 text-[13px] font-medium rounded-[4px] transition-colors ${viewMode === 'monthly' ? 'bg-white text-[#333] shadow-sm' : 'text-[#718096] hover:text-[#333]'}`}
+            >
+              Monthly Summary
+            </button>
+          </div>
+          {currentEmployee && selectedDate === getTodayBD() && !currentEmployeeRecord?.checkIn && viewMode === 'daily' && (
             <button 
               onClick={handleSelfCheckIn}
               className="flex-1 sm:flex-none justify-center bg-[#48BB78] hover:bg-[#38A169] text-white px-4 py-2 rounded-[4px] text-[14px] font-medium flex items-center gap-2 transition-colors"
@@ -218,13 +257,19 @@ export default function Attendance({ employees, isAdmin, settings, currentUserEm
           <div className="flex-1 sm:flex-none justify-center flex items-center gap-2 bg-white border border-[#E2E8F0] rounded-[4px] px-3 py-2 w-full sm:w-auto">
             <CalendarIcon className="w-4 h-4 text-[#718096]" />
             <input 
-              type="date" 
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
+              type={viewMode === 'monthly' ? "month" : "date"}
+              value={viewMode === 'monthly' ? selectedDate.substring(0, 7) : selectedDate}
+              onChange={(e) => {
+                if (viewMode === 'monthly') {
+                  setSelectedDate(`${e.target.value}-01`);
+                } else {
+                  setSelectedDate(e.target.value);
+                }
+              }}
               className="text-[14px] text-[#333] focus:outline-none bg-transparent w-full"
             />
           </div>
-          {isAdmin && (
+          {isAdmin && viewMode === 'daily' && (
             <button 
               onClick={markAllPresent}
               className="flex-1 sm:flex-none justify-center bg-[#4A90E2] hover:bg-[#3A80D2] text-white px-4 py-2 rounded-[4px] text-[14px] font-medium flex items-center gap-2 transition-colors w-full sm:w-auto"
@@ -238,98 +283,164 @@ export default function Attendance({ employees, isAdmin, settings, currentUserEm
 
       <div className="bg-[#FFFFFF] rounded-[8px] shadow-[0_1px_3px_rgba(0,0,0,0.1)] flex-1 overflow-hidden">
         <div className="overflow-x-auto h-full">
-          <table className="w-full text-left border-collapse min-w-[800px]">
-            <thead className="bg-[#FAFBFC] sticky top-0 z-10">
-              <tr>
-                <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5]">Employee</th>
-                <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5]">Department</th>
-                <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5]">Status</th>
-                <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5]">Check In</th>
-                {isAdmin && <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5] text-right">Mark Attendance</th>}
-              </tr>
-            </thead>
-            <tbody className="bg-white">
-              {(isAdmin ? employees : employees.filter(e => e.email === currentUserEmail)).map(emp => {
-                const record = attendance[emp.id];
-                return (
-                  <tr key={emp.id} className="hover:bg-[#FAFBFC] transition-colors">
-                    <td className="px-6 py-4 border-b border-[#F0F2F5]">
-                      <div className="flex items-center gap-3">
-                        <img src={emp.avatarUrl} alt="" className="w-8 h-8 rounded-full bg-[#E2E8F0] object-cover" />
-                        <div>
-                          <div className="font-medium text-[14px] text-[#333]">{emp.firstName} {emp.lastName}</div>
-                          <div className="text-[12px] text-[#718096]">{emp.role}</div>
+          {viewMode === 'daily' ? (
+            <table className="w-full text-left border-collapse min-w-[800px]">
+              <thead className="bg-[#FAFBFC] sticky top-0 z-10">
+                <tr>
+                  <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5]">Employee</th>
+                  <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5]">Department</th>
+                  <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5]">Status</th>
+                  <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5]">Check In</th>
+                  {isAdmin && <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5] text-right">Mark Attendance</th>}
+                </tr>
+              </thead>
+              <tbody className="bg-white">
+                {(isAdmin ? employees : employees.filter(e => e.email === currentUserEmail)).map(emp => {
+                  const record = attendance[emp.id];
+                  return (
+                    <tr key={emp.id} className="hover:bg-[#FAFBFC] transition-colors">
+                      <td className="px-6 py-4 border-b border-[#F0F2F5]">
+                        <div className="flex items-center gap-3">
+                          <img src={emp.avatarUrl} alt="" className="w-8 h-8 rounded-full bg-[#E2E8F0] object-cover" />
+                          <div>
+                            <div className="font-medium text-[14px] text-[#333]">{emp.firstName} {emp.lastName}</div>
+                            <div className="text-[12px] text-[#718096]">{emp.role}</div>
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 border-b border-[#F0F2F5]">
-                      <div className="text-[14px] text-[#4A5568]">{emp.department}</div>
-                    </td>
-                    <td className="px-6 py-4 border-b border-[#F0F2F5]">
-                      <div className="flex flex-col gap-1 items-start">
-                        {getStatusBadge(record?.status)}
-                        {record?.isLate && (
-                          <span className="text-[11px] font-medium text-[#C53030]">
-                            Late: {record.lateMinutes} mins
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 border-b border-[#F0F2F5]">
-                      {isAdmin ? (
-                        <div>
-                          <input 
-                            type="time" 
-                            value={record?.checkIn || ''}
-                            onChange={(e) => handleCheckInChange(emp.id, e.target.value)}
-                            className={`text-[13px] border rounded-[4px] px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#4A90E2] ${record?.isLate ? 'border-[#FC8181] text-[#C53030]' : 'border-[#E2E8F0] text-[#4A5568]'}`}
-                          />
-                          {record?.checkIn && (
-                            <div className="text-[10px] text-[#A0AEC0] mt-1 space-y-0.5">
-                              {record.checkInMethod === 'manual' ? (
-                                <span className="flex items-center gap-1 text-[#D69E2E]"><AlertCircle className="w-3 h-3"/> Edited Manually</span>
-                              ) : (
-                                <span className="flex items-center gap-1 text-[#38A169]"><CheckCircle2 className="w-3 h-3"/> Auto (Internet Time)</span>
-                              )}
-                              {record.markedBy !== emp.email && <span className="block italic truncate overflow-hidden max-w-[120px]" title={record.markedBy}>by {record.markedBy}</span>}
-                            </div>
+                      </td>
+                      <td className="px-6 py-4 border-b border-[#F0F2F5]">
+                        <div className="text-[14px] text-[#4A5568]">{emp.department}</div>
+                      </td>
+                      <td className="px-6 py-4 border-b border-[#F0F2F5]">
+                        <div className="flex flex-col gap-1 items-start">
+                          {getStatusBadge(record?.status)}
+                          {record?.isLate && (
+                            <span className="text-[11px] font-medium text-[#C53030]">
+                              Late: {record.lateMinutes} mins
+                            </span>
                           )}
                         </div>
-                      ) : (
-                        <span className={`text-[13px] font-medium ${record?.isLate ? 'text-[#C53030]' : 'text-[#4A5568]'}`}>
-                          {record?.checkIn || '-'}
-                        </span>
-                      )}
-                    </td>
-                    {isAdmin && (
-                      <td className="px-6 py-4 border-b border-[#F0F2F5] text-right">
-                        <select 
-                          value={record?.status || ''}
-                          onChange={(e) => handleStatusChange(emp.id, e.target.value as AttendanceRecord['status'])}
-                          className="text-[13px] border border-[#E2E8F0] rounded-[4px] px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#4A90E2] text-[#4A5568]"
-                        >
-                          <option value="" disabled>Select Status</option>
-                          <option value="Present">Present</option>
-                          <option value="Absent">Absent</option>
-                          <option value="Half Day">Half Day</option>
-                          <option value="On Leave">On Leave</option>
-                          <option value="Late">Late</option>
-                          <option value="Off Day">Off Day</option>
-                        </select>
                       </td>
-                    )}
+                      <td className="px-6 py-4 border-b border-[#F0F2F5]">
+                        {isAdmin ? (
+                          <div>
+                            <input 
+                              type="time" 
+                              value={record?.checkIn || ''}
+                              onChange={(e) => handleCheckInChange(emp.id, e.target.value)}
+                              className={`text-[13px] border rounded-[4px] px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#4A90E2] ${record?.isLate ? 'border-[#FC8181] text-[#C53030]' : 'border-[#E2E8F0] text-[#4A5568]'}`}
+                            />
+                            {record?.checkIn && (
+                              <div className="text-[10px] text-[#A0AEC0] mt-1 space-y-0.5">
+                                {record.checkInMethod === 'manual' ? (
+                                  <span className="flex items-center gap-1 text-[#D69E2E]"><AlertCircle className="w-3 h-3"/> Edited Manually</span>
+                                ) : (
+                                  <span className="flex items-center gap-1 text-[#38A169]"><CheckCircle2 className="w-3 h-3"/> Auto (Internet Time)</span>
+                                )}
+                                {record.markedBy !== emp.email && <span className="block italic truncate overflow-hidden max-w-[120px]" title={record.markedBy}>by {record.markedBy}</span>}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className={`text-[13px] font-medium ${record?.isLate ? 'text-[#C53030]' : 'text-[#4A5568]'}`}>
+                            {record?.checkIn || '-'}
+                          </span>
+                        )}
+                      </td>
+                      {isAdmin && (
+                        <td className="px-6 py-4 border-b border-[#F0F2F5] text-right">
+                          <select 
+                            value={record?.status || ''}
+                            onChange={(e) => handleStatusChange(emp.id, e.target.value as AttendanceRecord['status'])}
+                            className="text-[13px] border border-[#E2E8F0] rounded-[4px] px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#4A90E2] text-[#4A5568]"
+                          >
+                            <option value="" disabled>Select Status</option>
+                            <option value="Present">Present</option>
+                            <option value="Absent">Absent</option>
+                            <option value="Half Day">Half Day</option>
+                            <option value="On Leave">On Leave</option>
+                            <option value="Late">Late</option>
+                            <option value="Off Day">Off Day</option>
+                          </select>
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })}
+                {employees.length === 0 && (
+                  <tr>
+                    <td colSpan={isAdmin ? 5 : 4} className="px-6 py-16 text-center text-[#718096]">
+                      No employees found.
+                    </td>
                   </tr>
-                );
-              })}
-              {employees.length === 0 && (
+                )}
+              </tbody>
+            </table>
+          ) : (
+            <table className="w-full text-left border-collapse min-w-[800px]">
+              <thead className="bg-[#FAFBFC] sticky top-0 z-10">
                 <tr>
-                  <td colSpan={isAdmin ? 4 : 3} className="px-6 py-16 text-center text-[#718096]">
-                    No employees found.
-                  </td>
+                  <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5]">Employee</th>
+                  <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5] text-center">Present</th>
+                  <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5] text-center">Late</th>
+                  <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5] text-center">Absent</th>
+                  <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5] text-center">Half Day</th>
+                  <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5] text-center">On Leave</th>
+                  <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5] text-center">Total Working Days</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="bg-white">
+                {(isAdmin ? employees : employees.filter(e => e.email === currentUserEmail)).map(emp => {
+                  const records = monthlyAttendance[emp.id] || [];
+                  const present = records.filter(r => r.status === 'Present').length;
+                  const late = records.filter(r => r.status === 'Late' || r.isLate).length; // Depending on how late is tracked
+                  const absent = records.filter(r => r.status === 'Absent').length;
+                  const halfDay = records.filter(r => r.status === 'Half Day').length;
+                  const onLeave = records.filter(r => r.status === 'On Leave').length;
+                  const total = records.filter(r => r.status !== 'Off Day').length;
+                  
+                  return (
+                    <tr key={emp.id} className="hover:bg-[#FAFBFC] transition-colors">
+                      <td className="px-6 py-4 border-b border-[#F0F2F5]">
+                        <div className="flex items-center gap-3">
+                          <img src={emp.avatarUrl} alt="" className="w-8 h-8 rounded-full bg-[#E2E8F0] object-cover" />
+                          <div>
+                            <div className="font-medium text-[14px] text-[#333]">{emp.firstName} {emp.lastName}</div>
+                            <div className="text-[12px] text-[#718096]">{emp.role}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 border-b border-[#F0F2F5] text-center">
+                        <span className="text-[14px] font-semibold text-[#38A169]">{present}</span>
+                      </td>
+                      <td className="px-6 py-4 border-b border-[#F0F2F5] text-center">
+                        <span className="text-[14px] font-semibold text-[#DD6B20]">{late}</span>
+                      </td>
+                      <td className="px-6 py-4 border-b border-[#F0F2F5] text-center">
+                        <span className="text-[14px] font-semibold text-[#E53E3E]">{absent}</span>
+                      </td>
+                      <td className="px-6 py-4 border-b border-[#F0F2F5] text-center">
+                        <span className="text-[14px] font-semibold text-[#D69E2E]">{halfDay}</span>
+                      </td>
+                      <td className="px-6 py-4 border-b border-[#F0F2F5] text-center">
+                        <span className="text-[14px] font-semibold text-[#3182CE]">{onLeave}</span>
+                      </td>
+                      <td className="px-6 py-4 border-b border-[#F0F2F5] text-center">
+                        <span className="text-[14px] font-semibold text-[#4A5568]">{total}</span>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {employees.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-16 text-center text-[#718096]">
+                      No employees found.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
     </motion.div>
