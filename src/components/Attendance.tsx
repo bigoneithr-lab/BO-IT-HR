@@ -74,12 +74,23 @@ export default function Attendance({ employees, isAdmin, settings, currentUserEm
     const recordId = `${employeeId}_${selectedDate}`;
     const month = selectedDate.substring(0, 7);
     
+    let targetStatus = status;
+    const existingRecord = attendance[employeeId];
+    
+    // If setting to Present, check if it should be Late based on existing check-in
+    if (status === 'Present' && existingRecord?.checkIn) {
+      const lateMinutes = calculateLateMinutes(existingRecord.checkIn);
+      if (lateMinutes > 0) {
+        targetStatus = 'Late';
+      }
+    }
+    
     try {
       await setDoc(doc(db, 'attendance', recordId), {
         employeeId,
         date: selectedDate,
         month,
-        status,
+        status: targetStatus,
         markedBy: auth.currentUser?.email || 'Admin',
         updatedAt: new Date().toISOString()
       }, { merge: true });
@@ -89,19 +100,26 @@ export default function Attendance({ employees, isAdmin, settings, currentUserEm
   };
 
   const calculateLateMinutes = (checkInTime: string) => {
-    if (!settings?.workStartTime || !checkInTime) return 0;
+    if (!checkInTime) return 0;
     
-    let [startH, startM] = settings.workStartTime.split(':').map(Number);
-    let [checkInH, checkInM] = checkInTime.split(':').map(Number);
+    const getAdjustedTotal = (timeStr: string) => {
+      let [h, m] = timeStr.split(':').map(Number);
+      if (h < 12) h += 24;
+      return h * 60 + m;
+    };
     
-    // Handle night shift wrap-around (if time is AM, add 24 hours for comparison)
-    if (startH < 12) startH += 24;
-    if (checkInH < 12) checkInH += 24;
+    const checkInTotal = getAdjustedTotal(checkInTime);
+    const thresholdTotal = getAdjustedTotal('21:00'); // 9 PM Hard Limit
     
-    const startTotal = startH * 60 + startM;
-    const checkInTotal = checkInH * 60 + checkInM;
+    let baseLateMinutes = 0;
+    if (settings?.workStartTime) {
+      const startTotal = getAdjustedTotal(settings.workStartTime);
+      baseLateMinutes = Math.max(0, checkInTotal - startTotal);
+    }
     
-    return Math.max(0, checkInTotal - startTotal);
+    const extraLateMinutes = Math.max(0, checkInTotal - thresholdTotal);
+    
+    return Math.max(baseLateMinutes, extraLateMinutes);
   };
 
   const handleCheckInChange = async (employeeId: string, checkIn: string) => {
@@ -113,6 +131,16 @@ export default function Attendance({ employees, isAdmin, settings, currentUserEm
     const isLate = lateMinutes > 0;
     
     try {
+      // Auto-update status based on check-in time
+      const currentStatus = attendance[employeeId]?.status || 'Present';
+      let targetStatus = currentStatus;
+      
+      if (isLate) {
+        targetStatus = 'Late';
+      } else if (currentStatus === 'Late' || currentStatus === 'Absent') {
+        targetStatus = 'Present';
+      }
+
       await setDoc(doc(db, 'attendance', recordId), {
         employeeId,
         date: selectedDate,
@@ -120,7 +148,7 @@ export default function Attendance({ employees, isAdmin, settings, currentUserEm
         checkIn,
         isLate,
         lateMinutes,
-        status: attendance[employeeId]?.status || 'Present', // Default to present if setting check-in
+        status: targetStatus,
         markedBy: auth.currentUser?.email || 'Admin',
         checkInMethod: 'manual',
         updatedAt: new Date().toISOString()
@@ -185,14 +213,17 @@ export default function Attendance({ employees, isAdmin, settings, currentUserEm
       if (!attendance[emp.id]) {
         const recordId = `${emp.id}_${selectedDate}`;
         const checkIn = settings?.workStartTime || '21:00';
+        const lateMinutes = calculateLateMinutes(checkIn);
+        const isLate = lateMinutes > 0;
+        
         return setDoc(doc(db, 'attendance', recordId), {
           employeeId: emp.id,
           date: selectedDate,
           month,
-          status: 'Present',
+          status: isLate ? 'Late' : 'Present',
           checkIn,
-          isLate: false,
-          lateMinutes: 0,
+          isLate,
+          lateMinutes,
           markedBy: auth.currentUser?.email || 'System',
           updatedAt: new Date().toISOString()
         }, { merge: true });
@@ -220,7 +251,7 @@ export default function Attendance({ employees, isAdmin, settings, currentUserEm
   };
 
   const dailySummary = {
-    present: Object.values(attendance).filter(r => r.status === 'Present').length,
+    present: Object.values(attendance).filter(r => r.status === 'Present' || r.status === 'Late').length,
     late: Object.values(attendance).filter(r => r.status === 'Late' || r.isLate).length,
     absent: Object.values(attendance).filter(r => r.status === 'Absent').length,
     halfDay: Object.values(attendance).filter(r => r.status === 'Half Day').length,
@@ -293,34 +324,39 @@ export default function Attendance({ employees, isAdmin, settings, currentUserEm
       </div>
 
       {viewMode === 'daily' && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-          <div className="bg-white p-3 rounded-[8px] border border-[#E2E8F0] shadow-sm">
-            <div className="text-[11px] text-[#718096] uppercase font-bold tracking-wider mb-1">Present</div>
-            <div className="text-[18px] font-bold text-[#2C7A7B]">{dailySummary.present}</div>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-[14px] font-bold text-[#333] uppercase tracking-wider">Daily Attendance Summary</h3>
           </div>
-          <div className="bg-white p-3 rounded-[8px] border border-[#E2E8F0] shadow-sm">
-            <div className="text-[11px] text-[#718096] uppercase font-bold tracking-wider mb-1">Late</div>
-            <div className="text-[18px] font-bold text-[#C2410C]">{dailySummary.late}</div>
-          </div>
-          <div className="bg-white p-3 rounded-[8px] border border-[#E2E8F0] shadow-sm">
-            <div className="text-[11px] text-[#718096] uppercase font-bold tracking-wider mb-1">Absent</div>
-            <div className="text-[18px] font-bold text-[#C53030]">{dailySummary.absent}</div>
-          </div>
-          <div className="bg-white p-3 rounded-[8px] border border-[#E2E8F0] shadow-sm">
-            <div className="text-[11px] text-[#718096] uppercase font-bold tracking-wider mb-1">Half Day</div>
-            <div className="text-[18px] font-bold text-[#975A16]">{dailySummary.halfDay}</div>
-          </div>
-          <div className="bg-white p-3 rounded-[8px] border border-[#E2E8F0] shadow-sm">
-            <div className="text-[11px] text-[#718096] uppercase font-bold tracking-wider mb-1">On Leave</div>
-            <div className="text-[18px] font-bold text-[#2B6CB0]">{dailySummary.onLeave}</div>
-          </div>
-          <div className="bg-white p-3 rounded-[8px] border border-[#E2E8F0] shadow-sm">
-            <div className="text-[11px] text-[#718096] uppercase font-bold tracking-wider mb-1">Off Day</div>
-            <div className="text-[18px] font-bold text-[#475569]">{dailySummary.offDay}</div>
-          </div>
-          <div className="bg-white p-3 rounded-[8px] border border-[#E2E8F0] shadow-sm">
-            <div className="text-[11px] text-[#718096] uppercase font-bold tracking-wider mb-1">Not Marked</div>
-            <div className="text-[18px] font-bold text-[#A0AEC0]">{dailySummary.notMarked}</div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+            <div className="bg-white p-3 rounded-[8px] border border-[#E2E8F0] shadow-sm">
+              <div className="text-[10px] text-[#718096] uppercase font-bold tracking-wider mb-1">Present</div>
+              <div className="text-[20px] font-bold text-[#2C7A7B]">{dailySummary.present}</div>
+            </div>
+            <div className="bg-white p-3 rounded-[8px] border border-[#E2E8F0] shadow-sm">
+              <div className="text-[10px] text-[#718096] uppercase font-bold tracking-wider mb-1">Late</div>
+              <div className="text-[20px] font-bold text-[#C2410C]">{dailySummary.late}</div>
+            </div>
+            <div className="bg-white p-3 rounded-[8px] border border-[#E2E8F0] shadow-sm">
+              <div className="text-[10px] text-[#718096] uppercase font-bold tracking-wider mb-1">Absent</div>
+              <div className="text-[20px] font-bold text-[#C53030]">{dailySummary.absent}</div>
+            </div>
+            <div className="bg-white p-3 rounded-[8px] border border-[#E2E8F0] shadow-sm">
+              <div className="text-[10px] text-[#718096] uppercase font-bold tracking-wider mb-1">Half Day</div>
+              <div className="text-[20px] font-bold text-[#975A16]">{dailySummary.halfDay}</div>
+            </div>
+            <div className="bg-white p-3 rounded-[8px] border border-[#E2E8F0] shadow-sm">
+              <div className="text-[10px] text-[#718096] uppercase font-bold tracking-wider mb-1">On Leave</div>
+              <div className="text-[20px] font-bold text-[#2B6CB0]">{dailySummary.onLeave}</div>
+            </div>
+            <div className="bg-white p-3 rounded-[8px] border border-[#E2E8F0] shadow-sm">
+              <div className="text-[10px] text-[#718096] uppercase font-bold tracking-wider mb-1">Off Day</div>
+              <div className="text-[20px] font-bold text-[#475569]">{dailySummary.offDay}</div>
+            </div>
+            <div className="bg-white p-3 rounded-[8px] border border-[#E2E8F0] shadow-sm">
+              <div className="text-[10px] text-[#718096] uppercase font-bold tracking-wider mb-1">Not Marked</div>
+              <div className="text-[20px] font-bold text-[#A0AEC0]">{dailySummary.notMarked}</div>
+            </div>
           </div>
         </div>
       )}
@@ -436,12 +472,13 @@ export default function Attendance({ employees, isAdmin, settings, currentUserEm
               <tbody className="bg-white">
                 {(isAdmin ? employees : employees.filter(e => e.email === currentUserEmail)).map(emp => {
                   const records = monthlyAttendance[emp.id] || [];
-                  const present = records.filter(r => r.status === 'Present').length;
-                  const late = records.filter(r => r.status === 'Late' || r.isLate).length; // Depending on how late is tracked
+                  const present = records.filter(r => r.status === 'Present' || r.status === 'Late').length;
+                  const late = records.filter(r => r.status === 'Late' || r.isLate).length;
                   const absent = records.filter(r => r.status === 'Absent').length;
                   const halfDay = records.filter(r => r.status === 'Half Day').length;
                   const onLeave = records.filter(r => r.status === 'On Leave').length;
-                  const total = records.filter(r => r.status !== 'Off Day').length;
+                  
+                  const total = present;
                   
                   return (
                     <tr key={emp.id} className="hover:bg-[#FAFBFC] transition-colors">
