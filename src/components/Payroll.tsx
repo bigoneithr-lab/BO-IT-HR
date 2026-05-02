@@ -20,6 +20,7 @@ export default function Payroll({ employees, isAdmin, settings, currentUserEmail
     employeeId: '',
     month: new Date().toISOString().slice(0, 7),
     absentDays: 0,
+    leaveDays: 0,
     lateDaysCount: 0,
     totalWorkingDays: 0,
     hasAttendanceBonus: true,
@@ -41,6 +42,7 @@ export default function Payroll({ employees, isAdmin, settings, currentUserEmail
       try {
         const snapshot = await getDocs(q);
         let absences = 0;
+        let leaves = 0;
         let lateDaysCount = 0;
         let totalWorkingDays = 0;
         snapshot.forEach(doc => {
@@ -60,14 +62,18 @@ export default function Payroll({ employees, isAdmin, settings, currentUserEmail
           if (data.status === 'Off Day') {
             totalWorkingDays += 1;
           }
+          if (data.status === 'On Leave') {
+            leaves += 1;
+          }
         });
         
         setFormData(prev => ({
           ...prev,
           absentDays: absences,
+          leaveDays: leaves,
           lateDaysCount: lateDaysCount,
           totalWorkingDays: totalWorkingDays,
-          hasAttendanceBonus: absences === 0 && lateDaysCount === 0
+          hasAttendanceBonus: absences === 0 && leaves === 0
         }));
       } catch (error) {
         console.error("Error fetching attendance for payroll", error);
@@ -150,7 +156,9 @@ export default function Payroll({ employees, isAdmin, settings, currentUserEmail
       allowances.teamSales = (formData.teamSales || 0) * 5;
       allowances.ownSales = (formData.ownSales || 0) * 100;
     } else {
-      if (formData.hasAttendanceBonus) allowances.attendance = 1000;
+      if (formData.hasAttendanceBonus) {
+        allowances.attendance = Math.round((1000 / daysInMonth) * formData.totalWorkingDays);
+      }
       if (formData.hasDressCodeBonus) allowances.dressCode = 1000;
       if (!isProbation) allowances.dinner = 2000;
     }
@@ -172,6 +180,7 @@ export default function Payroll({ employees, isAdmin, settings, currentUserEmail
       ...formData,
       employeeId: e.target.value,
       absentDays: 0,
+      leaveDays: 0,
       lateDaysCount: 0,
       hasAttendanceBonus: true,
       hasDressCodeBonus: true,
@@ -204,6 +213,7 @@ export default function Payroll({ employees, isAdmin, settings, currentUserEmail
         employeeId: '',
         month: new Date().toISOString().slice(0, 7),
         absentDays: 0,
+        leaveDays: 0,
         lateDaysCount: 0,
         totalWorkingDays: 0,
         hasAttendanceBonus: true,
@@ -417,41 +427,46 @@ export default function Payroll({ employees, isAdmin, settings, currentUserEmail
 
                   {selectedEmployee && (
                       <div className="bg-[#F7FAFC] border border-[#E2E8F0] rounded-[8px] p-5 space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4 border-b border-[#E2E8F0]">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pb-4 border-b border-[#E2E8F0]">
                           <div>
                             <label className="flex items-center gap-2 text-[12px] font-medium text-[#718096] uppercase tracking-[0.5px] mb-1">
-                              Total Working Days (Paid)
-                              <span className="bg-[#EBF4FF] text-[#2B6CB0] px-1.5 py-0.5 rounded text-[10px] normal-case tracking-normal">Auto-calculated</span>
+                              Total Working Days
+                              <span className="bg-[#EBF4FF] text-[#2B6CB0] px-1.5 py-0.5 rounded text-[10px] normal-case tracking-normal">Auto</span>
                             </label>
-                            <div className="flex items-center gap-3">
-                              <input 
-                                type="number" 
-                                min="0"
-                                max="31"
-                                step="0.5"
-                                value={formData.totalWorkingDays}
-                                onChange={e => setFormData({...formData, totalWorkingDays: parseFloat(e.target.value) || 0})}
-                                className="w-full px-3 py-2 border border-[#E2E8F0] rounded-[4px] bg-white text-[14px] focus:outline-none focus:ring-1 focus:ring-[#4A90E2] transition-colors font-bold text-[#2B6CB0]"
-                              />
-                            </div>
-                            <p className="text-[11px] text-[#718096] mt-1 italic">Includes Present + Late + Off Days</p>
+                            <input 
+                              type="number" 
+                              min="0"
+                              max="31"
+                              step="0.5"
+                              value={formData.totalWorkingDays}
+                              onChange={e => setFormData({...formData, totalWorkingDays: parseFloat(e.target.value) || 0})}
+                              className="w-full px-3 py-2 border border-[#E2E8F0] rounded-[4px] bg-white text-[14px] focus:outline-none focus:ring-1 focus:ring-[#4A90E2] transition-colors font-bold text-[#2B6CB0]"
+                            />
+                            <p className="text-[10px] text-[#718096] mt-1 italic">Present + Off Days</p>
                           </div>
                           <div>
                             <label className="flex items-center gap-2 text-[12px] font-medium text-[#718096] uppercase tracking-[0.5px] mb-1">
                               Unpaid Absences
                             </label>
-                            <div className="flex items-center gap-3">
-                              <input 
-                                type="number" 
-                                min="0"
-                                max="31"
-                                step="0.5"
-                                value={formData.absentDays}
-                                readOnly
-                                className="w-full px-3 py-2 border border-[#E2E8F0] rounded-[4px] bg-[#EDF2F7] text-[14px] text-[#718096] focus:outline-none"
-                              />
-                            </div>
-                            <p className="text-[11px] text-[#718096] mt-1 italic">Absences & Half Day deductions</p>
+                            <input 
+                              type="number" 
+                              readOnly
+                              value={formData.absentDays}
+                              className="w-full px-3 py-2 border border-[#E2E8F0] rounded-[4px] bg-[#EDF2F7] text-[14px] text-[#718096] focus:outline-none"
+                            />
+                            <p className="text-[10px] text-[#718096] mt-1 italic">Deducted from Base</p>
+                          </div>
+                          <div>
+                            <label className="flex items-center gap-2 text-[12px] font-medium text-[#718096] uppercase tracking-[0.5px] mb-1">
+                              Approved Leaves
+                            </label>
+                            <input 
+                              type="number" 
+                              readOnly
+                              value={formData.leaveDays}
+                              className="w-full px-3 py-2 border border-[#E2E8F0] rounded-[4px] bg-[#EDF2F7] text-[14px] text-[#718096] focus:outline-none"
+                            />
+                            <p className="text-[10px] text-[#718096] mt-1 italic">Disqualifies Bonus</p>
                           </div>
                         </div>
 
@@ -506,8 +521,13 @@ export default function Payroll({ employees, isAdmin, settings, currentUserEmail
                                 onChange={e => setFormData({...formData, hasAttendanceBonus: e.target.checked})}
                                 className="w-4 h-4 text-[#4A90E2] rounded border-[#E2E8F0] focus:ring-[#4A90E2]"
                               />
-                              <span className="text-[14px] text-[#333] flex-1">Attendance Bonus</span>
-                              <span className="text-[14px] font-medium text-[#48BB78]">+ {formatCurrency(1000)}</span>
+                              <div className="flex-1">
+                                <span className="text-[14px] text-[#333] block">Attendance Bonus</span>
+                                <span className="text-[11px] text-[#718096]">Available if No Absent & No Leave</span>
+                              </div>
+                              <span className="text-[14px] font-medium text-[#48BB78]">
+                                + {formatCurrency(currentCalc?.allowances.attendance || 0)}
+                              </span>
                             </label>
                             
                             <label className="flex items-center gap-3 cursor-pointer">

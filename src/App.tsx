@@ -412,7 +412,7 @@ export default function App() {
         <main className="flex-1 overflow-y-auto p-4 md:p-8">
           {currentView === 'dashboard' && userRole !== 'employee' && <Dashboard employees={employees} departments={departments} />}
           {currentView === 'employees' && <EmployeeList employees={employees} departments={departments} onViewProfile={handleViewProfile} />}
-          {currentView === 'recruitment' && <RecruitmentBoard applicants={applicants} departments={departments} />}
+          {currentView === 'recruitment' && <RecruitmentBoard applicants={applicants} departments={departments} employees={employees} />}
           {currentView === 'access-requests' && userRole === 'admin' && <AccessRequests />}
           {currentView === 'time-off' && <LeaveManagement employees={employees} isAdmin={userRole === 'admin' || userRole === 'manager'} currentUserEmail={user?.email} />}
           {currentView === 'departments' && <Departments employees={employees} departments={departments} isAdmin={userRole === 'admin' || userRole === 'manager'} />}

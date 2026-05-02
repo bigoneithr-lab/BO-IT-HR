@@ -480,7 +480,7 @@ export default function Attendance({ employees, isAdmin, settings, currentUserEm
                   const onLeave = records.filter(r => r.status === 'On Leave').length;
                   const offDay = records.filter(r => r.status === 'Off Day').length;
                   
-                  const total = present + offDay;
+                  const total = present + offDay + (halfDay * 0.5);
                   
                   return (
                     <tr key={emp.id} className="hover:bg-[#FAFBFC] transition-colors">

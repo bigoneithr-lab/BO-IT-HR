@@ -4,16 +4,55 @@ import { Plus, MoreVertical, Mail, Phone, Calendar, UserPlus } from 'lucide-reac
 import { collection, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { handleFirestoreError, OperationType } from '../lib/firebase-utils';
-import { Applicant, ApplicantStage, Department } from '../types';
+import { Applicant, ApplicantStage, Department, Employee } from '../types';
 
 interface RecruitmentBoardProps {
   applicants: Applicant[];
   departments: Department[];
+  employees: Employee[];
 }
 
 const STAGES: ApplicantStage[] = ['Applied', 'Interviewing', 'Offered', 'Hired', 'Rejected'];
 
-export default function RecruitmentBoard({ applicants, departments }: RecruitmentBoardProps) {
+export default function RecruitmentBoard({ applicants, departments, employees }: RecruitmentBoardProps) {
+  // Filter out applicants who are already employees
+  const activeApplicants = applicants.filter(applicant => {
+    const isEmployee = employees.some(emp => {
+      // 1. Email exact match (most reliable)
+      const empEmail = (emp.email || '').toLowerCase().trim();
+      const applicantEmail = (applicant.email || '').toLowerCase().trim();
+      if (empEmail && applicantEmail && empEmail === applicantEmail) return true;
+
+      // 2. Phone match (very reliable)
+      const normalizePhone = (p: string) => (p || '').replace(/[^0-9]/g, '');
+      const empPhone = normalizePhone(emp.phone || '');
+      const applicantPhone = normalizePhone(applicant.phone || '');
+      if (empPhone && applicantPhone && (empPhone.includes(applicantPhone) || applicantPhone.includes(empPhone)) && (empPhone.length >= 8 || applicantPhone.length >= 8)) return true;
+
+      // 3. Name fuzzy match
+      const normalize = (s: string) => (s || '').toLowerCase().trim().replace(/[^a-z0-9]/g, '');
+      const appName = normalize(`${applicant.firstName}${applicant.lastName}`);
+      const empName = normalize(`${emp.firstName}${emp.lastName}`);
+      
+      if (appName && empName && (appName === empName || appName.includes(empName) || empName.includes(appName))) return true;
+
+      // 4. Word-based match (for cases like reversed names or missing middle names)
+      const normalizeToWords = (s: string) => (s || '').toLowerCase().trim().replace(/[^a-z0-9 ]/g, '').split(/\s+/).filter(w => w.length >= 2);
+      const appWords = normalizeToWords(`${applicant.firstName} ${applicant.lastName}`);
+      const empWords = normalizeToWords(`${emp.firstName} ${emp.lastName}`);
+      
+      if (appWords.length > 0 && empWords.length > 0) {
+        const commonWords = appWords.filter(w => empWords.includes(w));
+        // If they share at least 2 significant words, or all words of one are in the other
+        if (commonWords.length >= 2 || (commonWords.length > 0 && (commonWords.length === appWords.length || commonWords.length === empWords.length))) return true;
+      }
+
+      return false;
+    });
+    
+    // Also filter out any applicant explicitly marked as 'Converted' or who is already an employee
+    return !isEmployee && applicant.stage !== 'Converted';
+  });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingApplicant, setEditingApplicant] = useState<Applicant | undefined>();
   const [formData, setFormData] = useState<Partial<Applicant>>({
@@ -111,10 +150,8 @@ export default function RecruitmentBoard({ applicants, departments }: Recruitmen
         phone: applicant.phone || '',
       });
 
-      // Update applicant stage to Hired if not already
-      if (applicant.stage !== 'Hired') {
-        await updateDoc(doc(db, 'applicants', applicant.id), { stage: 'Hired' });
-      }
+      // Update applicant stage to Converted to remove from board
+      await updateDoc(doc(db, 'applicants', applicant.id), { stage: 'Converted' });
 
       alert('Successfully converted to employee! You can now find them in the Employee Directory.');
     } catch (error) {
@@ -156,7 +193,7 @@ export default function RecruitmentBoard({ applicants, departments }: Recruitmen
       <div className="flex-1 overflow-x-auto pb-4">
         <div className="flex gap-6 h-full min-w-max">
           {STAGES.map(stage => {
-            const stageApplicants = applicants.filter(a => a.stage === stage);
+            const stageApplicants = activeApplicants.filter(a => a.stage === stage);
             return (
               <div 
                 key={stage}
