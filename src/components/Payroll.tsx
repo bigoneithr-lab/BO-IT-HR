@@ -21,6 +21,7 @@ export default function Payroll({ employees, isAdmin, settings, currentUserEmail
     month: new Date().toISOString().slice(0, 7),
     absentDays: 0,
     lateDaysCount: 0,
+    totalWorkingDays: 0,
     hasAttendanceBonus: true,
     hasDressCodeBonus: true,
     teamSales: 0,
@@ -41,17 +42,31 @@ export default function Payroll({ employees, isAdmin, settings, currentUserEmail
         const snapshot = await getDocs(q);
         let absences = 0;
         let lateDaysCount = 0;
+        let totalWorkingDays = 0;
         snapshot.forEach(doc => {
           const data = doc.data();
           if (data.status === 'Absent') absences += 1;
-          if (data.status === 'Half Day') absences += 0.5;
-          if (data.isLate || data.status === 'Late') lateDaysCount += 1;
+          if (data.status === 'Half Day') {
+            absences += 0.5;
+            totalWorkingDays += 0.5;
+          }
+          if (data.isLate || data.status === 'Late') {
+            lateDaysCount += 1;
+            totalWorkingDays += 1;
+          }
+          if (data.status === 'Present') {
+            totalWorkingDays += 1;
+          }
+          if (data.status === 'Off Day') {
+            totalWorkingDays += 1;
+          }
         });
         
         setFormData(prev => ({
           ...prev,
           absentDays: absences,
           lateDaysCount: lateDaysCount,
+          totalWorkingDays: totalWorkingDays,
           hasAttendanceBonus: absences === 0 && lateDaysCount === 0
         }));
       } catch (error) {
@@ -94,16 +109,22 @@ export default function Payroll({ employees, isAdmin, settings, currentUserEmail
     const [slipYear, slipMonth] = formData.month.split('-').map(Number);
     const joinYear = joinDateObj.getFullYear();
     const joinMonth = joinDateObj.getMonth() + 1;
+    const daysInMonth = new Date(slipYear, slipMonth, 0).getDate();
     
     let baseSalary = fullBaseSalary;
     let joinedMidMonth = false;
-    let workedDaysThisMonth = 30;
+    let workingDaysExpected = daysInMonth;
     
+    // Calculate salary based on attendance (Present + Off Days)
+    // Formula: (fullBaseSalary / daysInMonth) * totalWorkingDays
+    // The user specifically said "fetch the total attendance from 'Total Working Days'"
+    baseSalary = Math.round((fullBaseSalary / daysInMonth) * formData.totalWorkingDays);
+
     if (joinYear === slipYear && joinMonth === slipMonth) {
-      const daysInMonth = new Date(slipYear, slipMonth, 0).getDate();
       const joinDay = joinDateObj.getDate();
-      workedDaysThisMonth = Math.max(0, daysInMonth - joinDay + 1);
-      baseSalary = Math.round((fullBaseSalary / daysInMonth) * workedDaysThisMonth);
+      workingDaysExpected = Math.max(0, daysInMonth - joinDay + 1);
+      // Prorated joined mid month logic is already covered by attendance 
+      // if all days were marked. But we keep this flag for UI.
       joinedMidMonth = true;
     }
 
@@ -115,7 +136,7 @@ export default function Payroll({ employees, isAdmin, settings, currentUserEmail
       ownSales: 0
     };
     const penaltyDays = formData.lateDaysCount >= 3 ? formData.lateDaysCount - 2 : 0;
-    const deductionPerDay = fullBaseSalary / 30;
+    const deductionPerDay = fullBaseSalary / daysInMonth;
 
     const deductions = {
       absences: 0,
@@ -135,7 +156,8 @@ export default function Payroll({ employees, isAdmin, settings, currentUserEmail
     }
 
     if (isProbation && formData.absentDays > 0) {
-      deductions.absences = Math.round(formData.absentDays * deductionPerDay);
+      // In probation, we already calculated baseSalary based on attendance
+      // So no need to double deduct absences here.
     }
 
     const totalAllowances = Object.values(allowances).reduce((a, b) => a + b, 0);
@@ -393,18 +415,54 @@ export default function Payroll({ employees, isAdmin, settings, currentUserEmail
                   )}
 
                   {selectedEmployee && (
-                    <div className="bg-[#F7FAFC] border border-[#E2E8F0] rounded-[8px] p-5 space-y-4">
-                      <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3">
-                        <div>
-                          <span className="text-[14px] font-medium text-[#333] block">Base Salary ({isManager ? 'Manager' : 'Employee'})</span>
-                          {currentCalc?.joinedMidMonth && (
-                            <span className="text-[12px] text-[#A0AEC0]">Prorated ({currentCalc.workedDaysThisMonth} days worked)</span>
-                          )}
+                      <div className="bg-[#F7FAFC] border border-[#E2E8F0] rounded-[8px] p-5 space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4 border-b border-[#E2E8F0]">
+                          <div>
+                            <label className="flex items-center gap-2 text-[12px] font-medium text-[#718096] uppercase tracking-[0.5px] mb-1">
+                              Total Working Days (Paid)
+                              <span className="bg-[#EBF4FF] text-[#2B6CB0] px-1.5 py-0.5 rounded text-[10px] normal-case tracking-normal">Auto-calculated</span>
+                            </label>
+                            <div className="flex items-center gap-3">
+                              <input 
+                                type="number" 
+                                min="0"
+                                max="31"
+                                step="0.5"
+                                value={formData.totalWorkingDays}
+                                onChange={e => setFormData({...formData, totalWorkingDays: parseFloat(e.target.value) || 0})}
+                                className="w-full px-3 py-2 border border-[#E2E8F0] rounded-[4px] bg-white text-[14px] focus:outline-none focus:ring-1 focus:ring-[#4A90E2] transition-colors font-bold text-[#2B6CB0]"
+                              />
+                            </div>
+                            <p className="text-[11px] text-[#718096] mt-1 italic">Includes Present + Late + Off Days</p>
+                          </div>
+                          <div>
+                            <label className="flex items-center gap-2 text-[12px] font-medium text-[#718096] uppercase tracking-[0.5px] mb-1">
+                              Unpaid Absences
+                            </label>
+                            <div className="flex items-center gap-3">
+                              <input 
+                                type="number" 
+                                min="0"
+                                max="31"
+                                step="0.5"
+                                value={formData.absentDays}
+                                readOnly
+                                className="w-full px-3 py-2 border border-[#E2E8F0] rounded-[4px] bg-[#EDF2F7] text-[14px] text-[#718096] focus:outline-none"
+                              />
+                            </div>
+                            <p className="text-[11px] text-[#718096] mt-1 italic">Absences & Half Day deductions</p>
+                          </div>
                         </div>
-                        <span className="text-[14px] font-bold text-[#333]">
-                          {formatCurrency(currentCalc?.baseSalary || (isManager ? 25000 : 17000))}
-                        </span>
-                      </div>
+
+                        <div className="flex items-center justify-between border-b border-[#E2E8F0] py-3">
+                          <div>
+                            <span className="text-[14px] font-medium text-[#333] block">Base Salary Calculation</span>
+                            <span className="text-[12px] text-[#A0AEC0]">Formula: (Base Rate / Monthly Days) * Paid Days</span>
+                          </div>
+                          <span className="text-[14px] font-bold text-[#333]">
+                            {formatCurrency(currentCalc?.baseSalary || 0)}
+                          </span>
+                        </div>
 
                       {isManager ? (
                         <>

@@ -47,6 +47,21 @@
         }
       },
       "required": ["firstName", "lastName", "email", "role", "department", "status", "joinDate", "ownerId"]
+    },
+    "Device": {
+      "title": "Device",
+      "description": "Represents a company device.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "type": { "type": "string" },
+        "serialNumber": { "type": "string" },
+        "status": { "type": "string", "enum": ["Available", "Assigned", "Repaired", "Retired"] },
+        "assignedTo": { "type": "string", "description": "ID of employee the device is assigned to" },
+        "updatedBy": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "type", "updatedBy", "updatedAt"]
     }
   },
   "firestore": {
@@ -55,6 +70,12 @@
         "$ref": "#/entities/Employee"
       },
       "description": "Stores employee records."
+    },
+    "/devices/{deviceId}": {
+      "schema": {
+        "$ref": "#/entities/Device"
+      },
+      "description": "Stores company device records."
     }
   }
 }

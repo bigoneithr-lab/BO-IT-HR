@@ -18,15 +18,16 @@ import Payroll from './components/Payroll';
 import Performance from './components/Performance';
 import DocumentVault from './components/DocumentVault';
 import Attendance from './components/Attendance';
+import DeviceManagement from './components/DeviceManagement';
 import { Employee, Department, Applicant, CompanySettings } from './types';
 
 export default function App() {
-  type ViewType = 'dashboard' | 'employees' | 'access-requests' | 'profile' | 'time-off' | 'departments' | 'ai-assistant' | 'recruitment' | 'settings' | 'payroll' | 'performance' | 'documents' | 'attendance';
+  type ViewType = 'dashboard' | 'employees' | 'access-requests' | 'profile' | 'time-off' | 'departments' | 'ai-assistant' | 'recruitment' | 'settings' | 'payroll' | 'performance' | 'documents' | 'attendance' | 'devices';
 
   const [currentView, setCurrentView] = useState<ViewType>(() => {
     try {
       const hash = window.location.hash.replace('#', '');
-      const validViews = ['dashboard', 'employees', 'access-requests', 'profile', 'time-off', 'departments', 'ai-assistant', 'recruitment', 'settings', 'payroll', 'performance', 'documents', 'attendance'];
+      const validViews = ['dashboard', 'employees', 'access-requests', 'profile', 'time-off', 'departments', 'ai-assistant', 'recruitment', 'settings', 'payroll', 'performance', 'documents', 'attendance', 'devices'];
       if (hash && validViews.includes(hash)) {
         return hash as ViewType;
       }
@@ -39,7 +40,7 @@ export default function App() {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.replace('#', '') as ViewType;
-      const validViews = ['dashboard', 'employees', 'access-requests', 'profile', 'time-off', 'departments', 'ai-assistant', 'recruitment', 'settings', 'payroll', 'performance', 'documents', 'attendance'];
+      const validViews = ['dashboard', 'employees', 'access-requests', 'profile', 'time-off', 'departments', 'ai-assistant', 'recruitment', 'settings', 'payroll', 'performance', 'documents', 'attendance', 'devices'];
       if (validViews.includes(hash) && hash !== currentView) {
         setCurrentView(hash);
       }
@@ -207,7 +208,7 @@ export default function App() {
       if (unsubscribeApp) unsubscribeApp();
       unsubscribeSettings();
     };
-  }, [isAuthReady, user, appUserStatus]);
+  }, [isAuthReady, user, appUserStatus, userRole]);
 
   const handleLogin = async () => {
     try {
@@ -421,6 +422,7 @@ export default function App() {
           {currentView === 'performance' && <Performance employees={employees} isAdmin={userRole === 'admin' || userRole === 'manager'} currentUserEmail={user?.email} />}
           {currentView === 'documents' && <DocumentVault employees={employees} isAdmin={userRole === 'admin' || userRole === 'manager'} currentUserEmail={user?.email} />}
           {currentView === 'attendance' && <Attendance employees={employees} isAdmin={userRole === 'admin' || userRole === 'manager'} settings={companySettings} currentUserEmail={user?.email} />}
+          {currentView === 'devices' && (userRole === 'admin' || userRole === 'manager') && <DeviceManagement employees={employees} />}
           {currentView === 'profile' && selectedEmployee && (
             <EmployeeProfile 
               employee={selectedEmployee} 

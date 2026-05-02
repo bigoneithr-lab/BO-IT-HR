@@ -466,6 +466,7 @@ export default function Attendance({ employees, isAdmin, settings, currentUserEm
                   <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5] text-center">Absent</th>
                   <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5] text-center">Half Day</th>
                   <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5] text-center">On Leave</th>
+                  <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5] text-center">Off Day</th>
                   <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5] text-center">Total Working Days</th>
                 </tr>
               </thead>
@@ -477,8 +478,9 @@ export default function Attendance({ employees, isAdmin, settings, currentUserEm
                   const absent = records.filter(r => r.status === 'Absent').length;
                   const halfDay = records.filter(r => r.status === 'Half Day').length;
                   const onLeave = records.filter(r => r.status === 'On Leave').length;
+                  const offDay = records.filter(r => r.status === 'Off Day').length;
                   
-                  const total = present;
+                  const total = present + offDay;
                   
                   return (
                     <tr key={emp.id} className="hover:bg-[#FAFBFC] transition-colors">
@@ -505,6 +507,9 @@ export default function Attendance({ employees, isAdmin, settings, currentUserEm
                       </td>
                       <td className="px-6 py-4 border-b border-[#F0F2F5] text-center">
                         <span className="text-[14px] font-semibold text-[#3182CE]">{onLeave}</span>
+                      </td>
+                      <td className="px-6 py-4 border-b border-[#F0F2F5] text-center">
+                        <span className="text-[14px] font-semibold text-[#475569]">{offDay}</span>
                       </td>
                       <td className="px-6 py-4 border-b border-[#F0F2F5] text-center">
                         <span className="text-[14px] font-semibold text-[#4A5568]">{total}</span>

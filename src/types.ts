@@ -134,3 +134,14 @@ export interface PerformanceReview {
   status: 'Draft' | 'Published';
   createdAt: string;
 }
+
+export interface Device {
+  id: string;
+  name: string;
+  type: string;
+  serialNumber: string;
+  status: 'Available' | 'Assigned' | 'Repaired' | 'Retired';
+  assignedTo?: string; // Employee ID
+  updatedBy: string;
+  updatedAt: string;
+}

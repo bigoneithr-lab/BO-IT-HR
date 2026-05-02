@@ -1,9 +1,9 @@
-import { Users, LayoutDashboard, Settings as SettingsIcon, Building2, LogOut, KeyRound, Calendar, Sparkles, ClipboardList, Banknote, Target, FolderLock, Clock, X } from 'lucide-react';
+import { Users, LayoutDashboard, Settings as SettingsIcon, Building2, LogOut, KeyRound, Calendar, Sparkles, ClipboardList, Banknote, Target, FolderLock, Clock, X, Monitor } from 'lucide-react';
 import { CompanySettings } from '../types';
 
 interface SidebarProps {
-  currentView: 'dashboard' | 'employees' | 'access-requests' | 'profile' | 'time-off' | 'departments' | 'ai-assistant' | 'recruitment' | 'settings' | 'payroll' | 'performance' | 'documents' | 'attendance';
-  onViewChange: (view: 'dashboard' | 'employees' | 'access-requests' | 'time-off' | 'departments' | 'ai-assistant' | 'recruitment' | 'settings' | 'payroll' | 'performance' | 'documents' | 'attendance') => void;
+  currentView: 'dashboard' | 'employees' | 'access-requests' | 'profile' | 'time-off' | 'departments' | 'ai-assistant' | 'recruitment' | 'settings' | 'payroll' | 'performance' | 'documents' | 'attendance' | 'devices';
+  onViewChange: (view: 'dashboard' | 'employees' | 'access-requests' | 'time-off' | 'departments' | 'ai-assistant' | 'recruitment' | 'settings' | 'payroll' | 'performance' | 'documents' | 'attendance' | 'devices') => void;
   onLogout: () => void;
   userRole: 'admin' | 'manager' | 'employee';
   settings: CompanySettings | null;
@@ -16,6 +16,7 @@ export default function Sidebar({ currentView, onViewChange, onLogout, userRole,
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin', 'manager'] as string[] },
     { id: 'employees', label: 'Employee Directory', icon: Users, roles: ['admin', 'manager'] as string[] },
     { id: 'attendance', label: 'Attendance', icon: Clock, roles: ['admin', 'manager', 'employee'] as string[] },
+    { id: 'devices', label: 'Devices', icon: Monitor, roles: ['admin', 'manager'] as string[] },
     { id: 'recruitment', label: 'Recruitment', icon: ClipboardList, roles: ['admin', 'manager'] as string[] },
     { id: 'time-off', label: 'Time-Off', icon: Calendar, roles: ['admin', 'manager', 'employee'] as string[] },
     { id: 'payroll', label: 'Payroll', icon: Banknote, roles: ['admin', 'manager', 'employee'] as string[] },
