@@ -13,9 +13,11 @@ interface DeviceManagementProps {
 export default function DeviceManagement({ employees }: DeviceManagementProps) {
   const [devices, setDevices] = useState<Device[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [editingDevice, setEditingDevice] = useState<Device | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [bulkLoading, setBulkLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -23,6 +25,13 @@ export default function DeviceManagement({ employees }: DeviceManagementProps) {
     serialNumber: '',
     status: 'Available' as Device['status'],
     assignedTo: ''
+  });
+
+  const [bulkFormData, setBulkFormData] = useState({
+    mac: 0,
+    laptop: 0,
+    iphone: 0,
+    pixel: 0
   });
 
   useEffect(() => {
@@ -58,6 +67,44 @@ export default function DeviceManagement({ employees }: DeviceManagementProps) {
       resetForm();
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `devices/${deviceId}`);
+    }
+  };
+
+  const handleBulkSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBulkLoading(true);
+    
+    const entries = [
+      { type: 'Mac', count: bulkFormData.mac, name: 'Mac' },
+      { type: 'Laptop', count: bulkFormData.laptop, name: 'Laptop' },
+      { type: 'iPhone', count: bulkFormData.iphone, name: 'iPhone' },
+      { type: 'Pixel 7', count: bulkFormData.pixel, name: 'Pixel' }
+    ];
+
+    try {
+      for (const entry of entries) {
+        if (entry.count <= 0) continue;
+        for (let i = 0; i < entry.count; i++) {
+          const deviceId = Math.random().toString(36).substr(2, 9);
+          const deviceData = {
+            name: `${entry.name} ${Math.random().toString(36).substr(2, 4).toUpperCase()}`,
+            type: entry.type,
+            serialNumber: `BULK-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+            status: 'Available' as const,
+            assignedTo: '',
+            updatedBy: auth.currentUser?.email || 'Bulk Import',
+            updatedAt: new Date().toISOString()
+          };
+          await setDoc(doc(db, 'devices', deviceId), deviceData);
+        }
+      }
+      setIsBulkModalOpen(false);
+      setBulkFormData({ mac: 0, laptop: 0, iphone: 0, pixel: 0 });
+      alert('Bulk devices created successfully!');
+    } catch (error) {
+      handleFirestoreError(error, OperationType.CREATE, 'devices/bulk');
+    } finally {
+      setBulkLoading(false);
     }
   };
 
@@ -129,13 +176,69 @@ export default function DeviceManagement({ employees }: DeviceManagementProps) {
           <h2 className="text-[20px] font-bold text-[#1A2233]">Device Management</h2>
           <p className="text-[13px] text-[#718096]">Tracker for company hardware assets</p>
         </div>
-        <button 
-          onClick={() => { resetForm(); setIsModalOpen(true); }}
-          className="flex items-center gap-2 bg-[#4A90E2] hover:bg-[#3A80D2] text-white px-4 py-2 rounded-[6px] text-[14px] font-medium transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          Add Device
-        </button>
+        <div className="flex gap-3">
+          <button 
+            onClick={() => setIsBulkModalOpen(true)}
+            className="flex items-center gap-2 bg-[#F7FAFC] border border-[#E2E8F0] text-[#4A5568] hover:bg-[#EDF2F7] px-4 py-2 rounded-[6px] text-[14px] font-medium transition-colors"
+          >
+            <Box className="w-4 h-4" />
+            Bulk Create
+          </button>
+          <button 
+            onClick={() => { resetForm(); setIsModalOpen(true); }}
+            className="flex items-center gap-2 bg-[#4A90E2] hover:bg-[#3A80D2] text-white px-4 py-2 rounded-[6px] text-[14px] font-medium transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Add Device
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-white p-4 rounded-[8px] border border-[#E2E8F0] shadow-sm flex items-center gap-4">
+          <div className="w-10 h-10 rounded-full bg-[#EBF4FF] flex items-center justify-center text-[#2B6CB0]">
+            <Laptop className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="text-[11px] text-[#718096] uppercase font-bold tracking-wider mb-0.5">Mac</div>
+            <div className="text-[20px] font-bold text-[#1A2233]">
+              {devices.filter(d => d.type.toLowerCase() === 'mac').length}
+            </div>
+          </div>
+        </div>
+        <div className="bg-white p-4 rounded-[8px] border border-[#E2E8F0] shadow-sm flex items-center gap-4">
+          <div className="w-10 h-10 rounded-full bg-[#EBF4FF] flex items-center justify-center text-[#2B6CB0]">
+            <Monitor className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="text-[11px] text-[#718096] uppercase font-bold tracking-wider mb-0.5">Laptop</div>
+            <div className="text-[20px] font-bold text-[#1A2233]">
+              {devices.filter(d => d.type.toLowerCase() === 'laptop').length}
+            </div>
+          </div>
+        </div>
+        <div className="bg-white p-4 rounded-[8px] border border-[#E2E8F0] shadow-sm flex items-center gap-4">
+          <div className="w-10 h-10 rounded-full bg-[#F3F4F6] flex items-center justify-center text-[#4A5568]">
+            <Smartphone className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="text-[11px] text-[#718096] uppercase font-bold tracking-wider mb-0.5">iPhone</div>
+            <div className="text-[20px] font-bold text-[#1A2233]">
+              {devices.filter(d => d.type.toLowerCase() === 'iphone').length}
+            </div>
+          </div>
+        </div>
+        <div className="bg-white p-4 rounded-[8px] border border-[#E2E8F0] shadow-sm flex items-center gap-4">
+          <div className="w-10 h-10 rounded-full bg-[#F3F4F6] flex items-center justify-center text-[#4A5568]">
+            <Smartphone className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="text-[11px] text-[#718096] uppercase font-bold tracking-wider mb-0.5">Pixel</div>
+            <div className="text-[20px] font-bold text-[#1A2233]">
+              {devices.filter(d => d.type.toLowerCase().includes('pixel')).length}
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -381,6 +484,103 @@ export default function DeviceManagement({ employees }: DeviceManagementProps) {
                   >
                     <Save className="w-4 h-4" />
                     {editingDevice ? 'Update' : 'Save'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Bulk Add Modal */}
+      <AnimatePresence>
+        {isBulkModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50"
+              onClick={() => !bulkLoading && setIsBulkModalOpen(false)}
+            />
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-[12px] shadow-xl w-full max-w-md overflow-hidden z-10"
+            >
+              <div className="bg-[#1A2233] p-4 text-white flex justify-between items-center">
+                <h3 className="font-bold">Bulk Create Devices</h3>
+                <button disabled={bulkLoading} onClick={() => setIsBulkModalOpen(false)}><X className="w-5 h-5" /></button>
+              </div>
+              <form onSubmit={handleBulkSubmit} className="p-6 space-y-4">
+                <p className="text-[13px] text-[#718096] border-b border-[#E2E8F0] pb-2">
+                  Enter the number of units to create for each category. Devices will be marked as <b>Available</b>.
+                </p>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[12px] font-bold text-[#718096] uppercase tracking-wider mb-1">Mac Total</label>
+                    <input 
+                      type="number"
+                      min="0"
+                      value={bulkFormData.mac}
+                      onChange={e => setBulkFormData({ ...bulkFormData, mac: parseInt(e.target.value) || 0 })}
+                      className="w-full px-3 py-2 border border-[#E2E8F0] rounded-[6px] text-[14px] focus:outline-none focus:ring-1 focus:ring-[#4A90E2]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[12px] font-bold text-[#718096] uppercase tracking-wider mb-1">Laptop Total</label>
+                    <input 
+                      type="number"
+                      min="0"
+                      value={bulkFormData.laptop}
+                      onChange={e => setBulkFormData({ ...bulkFormData, laptop: parseInt(e.target.value) || 0 })}
+                      className="w-full px-3 py-2 border border-[#E2E8F0] rounded-[6px] text-[14px] focus:outline-none focus:ring-1 focus:ring-[#4A90E2]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[12px] font-bold text-[#718096] uppercase tracking-wider mb-1">iPhone Total</label>
+                    <input 
+                      type="number"
+                      min="0"
+                      value={bulkFormData.iphone}
+                      onChange={e => setBulkFormData({ ...bulkFormData, iphone: parseInt(e.target.value) || 0 })}
+                      className="w-full px-3 py-2 border border-[#E2E8F0] rounded-[6px] text-[14px] focus:outline-none focus:ring-1 focus:ring-[#4A90E2]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[12px] font-bold text-[#718096] uppercase tracking-wider mb-1">Pixel Total</label>
+                    <input 
+                      type="number"
+                      min="0"
+                      value={bulkFormData.pixel}
+                      onChange={e => setBulkFormData({ ...bulkFormData, pixel: parseInt(e.target.value) || 0 })}
+                      className="w-full px-3 py-2 border border-[#E2E8F0] rounded-[6px] text-[14px] focus:outline-none focus:ring-1 focus:ring-[#4A90E2]"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-4 flex gap-3">
+                  <button 
+                    type="button"
+                    disabled={bulkLoading}
+                    onClick={() => setIsBulkModalOpen(false)}
+                    className="flex-1 px-4 py-2 border border-[#E2E8F0] text-[#718096] rounded-[6px] text-[14px] font-medium hover:bg-[#F7FAFC] transition-colors disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit"
+                    disabled={bulkLoading || (bulkFormData.mac === 0 && bulkFormData.laptop === 0 && bulkFormData.iphone === 0 && bulkFormData.pixel === 0)}
+                    className="flex-1 px-4 py-2 bg-[#2B6CB0] text-white rounded-[6px] text-[14px] font-medium hover:bg-[#2C5282] transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    {bulkLoading ? 'Creating...' : (
+                      <>
+                        <Save className="w-4 h-4" />
+                        Create {bulkFormData.mac + bulkFormData.laptop + bulkFormData.iphone + bulkFormData.pixel} Units
+                      </>
+                    )}
                   </button>
                 </div>
               </form>
