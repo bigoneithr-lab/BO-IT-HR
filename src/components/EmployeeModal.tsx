@@ -2,16 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Employee, EmployeeStatus, Department } from '../types';
+import { generateNextEmployeeId } from '../lib/employee-utils';
 
 interface EmployeeModalProps {
   isOpen: boolean;
   onClose: () => void;
   employee?: Employee;
+  employees: Employee[];
   departments: Department[];
   onSave: (employee: Employee) => void;
 }
 
-export default function EmployeeModal({ isOpen, onClose, employee, departments, onSave }: EmployeeModalProps) {
+export default function EmployeeModal({ isOpen, onClose, employee, employees, departments, onSave }: EmployeeModalProps) {
   const [formData, setFormData] = useState<Partial<Employee>>({
     employeeId: '',
     firstName: '',
@@ -27,8 +29,12 @@ export default function EmployeeModal({ isOpen, onClose, employee, departments, 
   useEffect(() => {
     if (employee) {
       setFormData(employee);
+    } else {
+      // Auto-generate next employee ID for new employees
+      const nextId = generateNextEmployeeId(employees);
+      setFormData(prev => ({ ...prev, employeeId: nextId }));
     }
-  }, [employee]);
+  }, [employee, employees]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

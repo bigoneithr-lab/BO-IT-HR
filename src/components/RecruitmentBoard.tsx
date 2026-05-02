@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { Plus, MoreVertical, Mail, Phone, Calendar, UserPlus } from 'lucide-react';
 import { collection, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db, auth } from '../firebase';
 import { handleFirestoreError, OperationType } from '../lib/firebase-utils';
 import { Applicant, ApplicantStage, Department, Employee } from '../types';
+import { generateNextEmployeeId } from '../lib/employee-utils';
 
 interface RecruitmentBoardProps {
   applicants: Applicant[];
@@ -137,8 +138,11 @@ export default function RecruitmentBoard({ applicants, departments, employees }:
     if (!window.confirm(`Convert ${applicant.firstName} ${applicant.lastName} to an employee?`)) return;
     
     try {
+      const nextId = generateNextEmployeeId(employees);
+      
       // Create employee
       await addDoc(collection(db, 'employees'), {
+        employeeId: nextId,
         firstName: applicant.firstName,
         lastName: applicant.lastName,
         email: applicant.email,
@@ -148,12 +152,13 @@ export default function RecruitmentBoard({ applicants, departments, employees }:
         joinDate: new Date().toISOString().split('T')[0],
         avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(applicant.firstName + ' ' + applicant.lastName)}&background=E2E8F0&color=4A5568`,
         phone: applicant.phone || '',
+        ownerId: auth.currentUser?.uid
       });
 
       // Update applicant stage to Converted to remove from board
       await updateDoc(doc(db, 'applicants', applicant.id), { stage: 'Converted' });
 
-      alert('Successfully converted to employee! You can now find them in the Employee Directory.');
+      alert(`Successfully converted to employee with ID: ${nextId}! You can now find them in the Employee Directory.`);
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, 'employees');
     }

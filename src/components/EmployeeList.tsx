@@ -190,6 +190,7 @@ export default function EmployeeList({ employees, departments, onViewProfile }: 
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           employee={editingEmployee}
+          employees={employees}
           departments={departments}
           onSave={handleSave}
         />
