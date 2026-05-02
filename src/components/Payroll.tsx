@@ -229,7 +229,9 @@ export default function Payroll({ employees, isAdmin, settings, currentUserEmail
   const handleStatusUpdate = async (id: string, newStatus: 'Paid') => {
     try {
       await updateDoc(doc(db, 'payslips', id), {
-        status: newStatus
+        status: newStatus,
+        paymentDate: new Date().toISOString(),
+        paidBy: auth.currentUser?.email || 'System'
       });
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `payslips/${id}`);
@@ -311,7 +313,14 @@ export default function Payroll({ employees, isAdmin, settings, currentUserEmail
                     </td>
                     <td className="px-6 py-4 border-b border-[#F0F2F5]">
                       {slip.status === 'Paid' ? (
-                        <span className="px-[10px] py-[4px] inline-flex text-[11px] font-semibold rounded-[12px] uppercase bg-[#E6FFFA] text-[#2C7A7B]">Paid</span>
+                        <div className="flex flex-col gap-1">
+                          <span className="px-[10px] py-[4px] inline-flex self-start text-[11px] font-semibold rounded-[12px] uppercase bg-[#E6FFFA] text-[#2C7A7B]">Paid</span>
+                          {slip.paymentDate && (
+                            <div className="text-[10px] text-[#718096]">
+                              {new Date(slip.paymentDate).toLocaleDateString()} by {slip.paidBy?.split('@')[0]}
+                            </div>
+                          )}
+                        </div>
                       ) : (
                         <span className="px-[10px] py-[4px] inline-flex text-[11px] font-semibold rounded-[12px] uppercase bg-[#EDF2F7] text-[#4A5568]">Draft</span>
                       )}

@@ -48,6 +48,39 @@
       },
       "required": ["firstName", "lastName", "email", "role", "department", "status", "joinDate", "ownerId"]
     },
+    "Payslip": {
+      "title": "Payslip",
+      "description": "Represents an employee's salary record.",
+      "type": "object",
+      "properties": {
+        "employeeId": { "type": "string" },
+        "month": { "type": "string", "example": "2024-03" },
+        "baseSalary": { "type": "integer" },
+        "netSalary": { "type": "integer" },
+        "status": { "type": "string", "enum": ["Draft", "Paid"] },
+        "generatedAt": { "type": "string", "format": "date-time" },
+        "generatedBy": { "type": "string" },
+        "paymentDate": { "type": "string", "format": "date-time" },
+        "paidBy": { "type": "string" }
+      },
+      "required": ["employeeId", "month", "baseSalary", "netSalary", "status", "generatedAt", "generatedBy"]
+    },
+    "AttendanceRecord": {
+      "title": "Attendance Record",
+      "description": "Daily attendance for an employee.",
+      "type": "object",
+      "properties": {
+        "employeeId": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "month": { "type": "string" },
+        "status": { "type": "string", "enum": ["Present", "Absent", "Half Day", "On Leave", "Late", "Off Day"] },
+        "checkIn": { "type": "string" },
+        "checkOut": { "type": "string" },
+        "isLate": { "type": "boolean" },
+        "markedBy": { "type": "string" }
+      },
+      "required": ["employeeId", "date", "month", "status", "markedBy"]
+    },
     "Device": {
       "title": "Device",
       "description": "Represents a company device.",
@@ -76,6 +109,18 @@
         "$ref": "#/entities/Device"
       },
       "description": "Stores company device records."
+    },
+    "/payslips/{payslipId}": {
+      "schema": {
+        "$ref": "#/entities/Payslip"
+      },
+      "description": "Stores employee payroll records."
+    },
+    "/attendance/{recordId}": {
+      "schema": {
+        "$ref": "#/entities/AttendanceRecord"
+      },
+      "description": "Stores daily attendance records."
     }
   }
 }

@@ -111,6 +111,8 @@ export interface Payslip {
   status: 'Draft' | 'Paid';
   generatedAt: string;
   generatedBy: string;
+  paymentDate?: string;
+  paidBy?: string;
 }
 
 export interface Goal {
