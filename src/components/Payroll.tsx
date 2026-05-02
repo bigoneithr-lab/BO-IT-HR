@@ -113,7 +113,7 @@ export default function Payroll({ employees, isAdmin, settings, currentUserEmail
     
     let baseSalary = fullBaseSalary;
     let joinedMidMonth = false;
-    let workingDaysExpected = daysInMonth;
+    let workedDaysThisMonth = daysInMonth;
     
     // Calculate salary based on attendance (Present + Off Days)
     // Formula: (fullBaseSalary / daysInMonth) * totalWorkingDays
@@ -122,7 +122,7 @@ export default function Payroll({ employees, isAdmin, settings, currentUserEmail
 
     if (joinYear === slipYear && joinMonth === slipMonth) {
       const joinDay = joinDateObj.getDate();
-      workingDaysExpected = Math.max(0, daysInMonth - joinDay + 1);
+      workedDaysThisMonth = Math.max(0, daysInMonth - joinDay + 1);
       // Prorated joined mid month logic is already covered by attendance 
       // if all days were marked. But we keep this flag for UI.
       joinedMidMonth = true;
@@ -205,6 +205,7 @@ export default function Payroll({ employees, isAdmin, settings, currentUserEmail
         month: new Date().toISOString().slice(0, 7),
         absentDays: 0,
         lateDaysCount: 0,
+        totalWorkingDays: 0,
         hasAttendanceBonus: true,
         hasDressCodeBonus: true,
         teamSales: 0,
