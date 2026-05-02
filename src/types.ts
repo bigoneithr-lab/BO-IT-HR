@@ -41,6 +41,7 @@ export interface Employee {
   phone?: string;
   location?: string;
   bio?: string;
+  reference?: string;
 }
 
 export type LeaveType = 'Casual' | 'Sick' | 'Personal' | 'Other';
@@ -78,6 +79,7 @@ export interface Applicant {
   phone?: string;
   resumeUrl?: string;
   notes?: string;
+  reference?: string;
 }
 
 export interface CompanySettings {

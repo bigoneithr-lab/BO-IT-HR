@@ -64,7 +64,8 @@ export default function RecruitmentBoard({ applicants, departments, employees }:
     stage: 'Applied',
     appliedDate: new Date().toISOString().split('T')[0],
     phone: '',
-    notes: ''
+    notes: '',
+    reference: ''
   });
 
   const handleDragStart = (e: React.DragEvent, applicantId: string) => {
@@ -100,7 +101,7 @@ export default function RecruitmentBoard({ applicants, departments, employees }:
       stage: 'Applied',
       appliedDate: new Date().toISOString().split('T')[0],
       phone: '',
-      notes: ''
+      reference: ''
     });
     setIsModalOpen(true);
   };
@@ -152,6 +153,7 @@ export default function RecruitmentBoard({ applicants, departments, employees }:
         joinDate: new Date().toISOString().split('T')[0],
         avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(applicant.firstName + ' ' + applicant.lastName)}&background=E2E8F0&color=4A5568`,
         phone: applicant.phone || '',
+        reference: applicant.reference || '',
         ownerId: auth.currentUser?.uid
       });
 
@@ -347,14 +349,26 @@ export default function RecruitmentBoard({ applicants, departments, employees }:
                 </div>
               </div>
 
-              <div>
-                <label className="block text-[12px] font-medium text-[#718096] uppercase tracking-[0.5px] mb-1">Phone (Optional)</label>
-                <input 
-                  type="tel" 
-                  value={formData.phone}
-                  onChange={e => setFormData({...formData, phone: e.target.value})}
-                  className="w-full px-3 py-2 border border-[#E2E8F0] rounded-[4px] bg-[#F7FAFC] text-[14px] focus:outline-none focus:ring-1 focus:ring-[#4A90E2] transition-colors"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[12px] font-medium text-[#718096] uppercase tracking-[0.5px] mb-1">Phone (Optional)</label>
+                  <input 
+                    type="tel" 
+                    value={formData.phone}
+                    onChange={e => setFormData({...formData, phone: e.target.value})}
+                    className="w-full px-3 py-2 border border-[#E2E8F0] rounded-[4px] bg-[#F7FAFC] text-[14px] focus:outline-none focus:ring-1 focus:ring-[#4A90E2] transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[12px] font-medium text-[#718096] uppercase tracking-[0.5px] mb-1">Reference</label>
+                  <input 
+                    type="text" 
+                    value={formData.reference || ''}
+                    onChange={e => setFormData({...formData, reference: e.target.value})}
+                    className="w-full px-3 py-2 border border-[#E2E8F0] rounded-[4px] bg-[#F7FAFC] text-[14px] focus:outline-none focus:ring-1 focus:ring-[#4A90E2] transition-colors"
+                    placeholder="Who referred them?"
+                  />
+                </div>
               </div>
 
               <div className="pt-4 flex justify-between border-t border-[#F0F2F5] mt-6">

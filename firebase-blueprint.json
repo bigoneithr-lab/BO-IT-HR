@@ -44,9 +44,30 @@
         "ownerId": {
           "type": "string",
           "description": "The UID of the user who created this record"
-        }
+        },
+        "phone": { "type": "string" },
+        "location": { "type": "string" },
+        "bio": { "type": "string" },
+        "reference": { "type": "string" }
       },
       "required": ["firstName", "lastName", "email", "role", "department", "status", "joinDate", "ownerId"]
+    },
+    "Applicant": {
+      "title": "Applicant",
+      "description": "Represents a job candidate.",
+      "type": "object",
+      "properties": {
+        "firstName": { "type": "string" },
+        "lastName": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string" },
+        "stage": { "type": "string", "enum": ["Applied", "Interviewing", "Offered", "Hired", "Rejected", "Converted"] },
+        "appliedDate": { "type": "string", "format": "date" },
+        "phone": { "type": "string" },
+        "notes": { "type": "string" },
+        "reference": { "type": "string" }
+      },
+      "required": ["firstName", "lastName", "email", "role", "stage", "appliedDate"]
     },
     "Payslip": {
       "title": "Payslip",
@@ -121,6 +142,12 @@
         "$ref": "#/entities/AttendanceRecord"
       },
       "description": "Stores daily attendance records."
+    },
+    "/applicants/{applicantId}": {
+      "schema": {
+        "$ref": "#/entities/Applicant"
+      },
+      "description": "Stores job applicants."
     }
   }
 }

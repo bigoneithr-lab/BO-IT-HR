@@ -166,15 +166,26 @@ export default function EmployeeModal({ isOpen, onClose, employee, employees, de
                 </select>
               </div>
               <div>
-                <label className="block text-[12px] font-medium text-[#718096] uppercase tracking-[0.5px] mb-1">Join Date</label>
+                <label className="block text-[12px] font-medium text-[#718096] uppercase tracking-[0.5px] mb-1">Reference</label>
                 <input 
-                  required
-                  type="date" 
-                  value={formData.joinDate}
-                  onChange={e => setFormData({...formData, joinDate: e.target.value})}
+                  type="text" 
+                  value={formData.reference || ''}
+                  onChange={e => setFormData({...formData, reference: e.target.value})}
                   className="w-full px-3 py-2 border border-[#E2E8F0] rounded-[4px] bg-[#F7FAFC] text-[14px] focus:outline-none focus:ring-1 focus:ring-[#4A90E2] focus:border-[#4A90E2] transition-colors"
+                  placeholder="e.g. Employee Name or Agency"
                 />
               </div>
+            </div>
+
+            <div>
+              <label className="block text-[12px] font-medium text-[#718096] uppercase tracking-[0.5px] mb-1">Join Date</label>
+              <input 
+                required
+                type="date" 
+                value={formData.joinDate}
+                onChange={e => setFormData({...formData, joinDate: e.target.value})}
+                className="w-full px-3 py-2 border border-[#E2E8F0] rounded-[4px] bg-[#F7FAFC] text-[14px] focus:outline-none focus:ring-1 focus:ring-[#4A90E2] focus:border-[#4A90E2] transition-colors"
+              />
             </div>
 
             <div className="pt-4 flex justify-end gap-3 border-t border-[#F0F2F5] mt-6">

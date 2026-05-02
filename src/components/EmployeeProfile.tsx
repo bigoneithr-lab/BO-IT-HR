@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { ArrowLeft, Mail, Phone, MapPin, Calendar, Briefcase } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, MapPin, Calendar, Briefcase, UserPlus } from 'lucide-react';
 import { Employee } from '../types';
 
 interface EmployeeProfileProps {
@@ -89,6 +89,18 @@ export default function EmployeeProfile({ employee, onBack }: EmployeeProfilePro
                   <div>
                     <div className="text-[12px] text-[#718096] uppercase tracking-[0.5px] font-medium">Location</div>
                     <div className="text-[14px] text-[#333] mt-1">{employee.location || 'Not provided'}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div>
+              <h3 className="text-[16px] font-semibold text-[#333] mb-4">Additional Info</h3>
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <UserPlus className="w-5 h-5 text-[#A0AEC0] mt-0.5" />
+                  <div>
+                    <div className="text-[12px] text-[#718096] uppercase tracking-[0.5px] font-medium">Reference / Referred By</div>
+                    <div className="text-[14px] text-[#333] mt-1">{employee.reference || 'No reference provided'}</div>
                   </div>
                 </div>
               </div>
