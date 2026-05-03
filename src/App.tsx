@@ -223,9 +223,7 @@ export default function App() {
     e.preventDefault();
     try {
       setAuthError(null);
-      // Firebase requires 6 char passwords. If user types 12345, pad it to 123456
-      const finalPassword = (loginEmail === 'bigoneit9326@gmail.com' && loginPassword === '12345') ? '123456' : loginPassword;
-      await signInWithEmailAndPassword(auth, loginEmail, finalPassword);
+      await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
     } catch (error: any) {
       if (error.code === 'auth/operation-not-allowed') {
         setAuthError('Email/Password sign-in is not enabled in Firebase Console. Please enable it in Authentication > Sign-in method.');
@@ -235,8 +233,7 @@ export default function App() {
       if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential' || error.message.includes('invalid-credential')) {
         if (loginEmail === 'bigoneit9326@gmail.com') {
           try {
-            const finalPassword = loginPassword === '12345' ? '123456' : loginPassword;
-            await createUserWithEmailAndPassword(auth, loginEmail, finalPassword);
+            await createUserWithEmailAndPassword(auth, loginEmail, loginPassword);
             return;
           } catch (createError: any) {
             if (createError.code === 'auth/operation-not-allowed') {
