@@ -118,8 +118,9 @@ export default function DocumentVault({ employees, isAdmin, currentUserEmail }: 
       if (!currentUserEmp || doc.employeeId !== currentUserEmp.id) return false;
     }
     
-    // Only accessible by bigoneithr@gmail.com
-    if (doc.category === 'Office Document' && currentUserEmail !== 'bigoneithr@gmail.com') return false;
+    // Only accessible by admins
+    const isSuperAdmin = currentUserEmail === 'bigoneithr@gmail.com' || currentUserEmail === 'bigoneit9326@gmail.com';
+    if (doc.category === 'Office Document' && !isSuperAdmin) return false;
 
     if (filterCategory !== 'All' && doc.category !== filterCategory) return false;
     if (searchTerm && !doc.name.toLowerCase().includes(searchTerm.toLowerCase())) return false;
@@ -203,7 +204,7 @@ export default function DocumentVault({ employees, isAdmin, currentUserEmail }: 
               <option value="Contract">Contracts</option>
               <option value="ID">IDs & Passports</option>
               <option value="Tax Document">Tax Documents</option>
-              {currentUserEmail === 'bigoneithr@gmail.com' && <option value="Office Document">Office Document</option>}
+              {(currentUserEmail === 'bigoneithr@gmail.com' || currentUserEmail === 'bigoneit9326@gmail.com') && <option value="Office Document">Office Document</option>}
               <option value="Other">Other</option>
             </select>
           </div>
@@ -365,7 +366,7 @@ export default function DocumentVault({ employees, isAdmin, currentUserEmail }: 
                     <option value="Contract">Contract</option>
                     <option value="ID">ID / Passport</option>
                     <option value="Tax Document">Tax Document</option>
-                    {currentUserEmail === 'bigoneithr@gmail.com' && <option value="Office Document">Office Document</option>}
+                    {(currentUserEmail === 'bigoneithr@gmail.com' || currentUserEmail === 'bigoneit9326@gmail.com') && <option value="Office Document">Office Document</option>}
                     <option value="Other">Other</option>
                   </select>
                 </div>
