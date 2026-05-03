@@ -229,7 +229,24 @@ export default function App() {
     } catch (error: any) {
       if (error.code === 'auth/operation-not-allowed') {
         setAuthError('Email/Password sign-in is not enabled in Firebase Console. Please enable it in Authentication > Sign-in method.');
-      } else if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+        return;
+      }
+
+      // If sign-in fails for the specific admin email, try to create the account
+      if (loginEmail === 'bigoneit9326@gmail.com' && (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential')) {
+        try {
+          await createUserWithEmailAndPassword(auth, loginEmail, loginPassword);
+          return;
+        } catch (createError: any) {
+          if (createError.code === 'auth/email-already-in-use') {
+            setAuthError('Invalid password for this admin account. Please check your credentials.');
+            return;
+          }
+          // Fall through to general error handling if creation fails for other reasons
+        }
+      }
+
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
         setAuthError('Invalid email or password. Please check your credentials.');
       } else {
         setAuthError(error.message);
