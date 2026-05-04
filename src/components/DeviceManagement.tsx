@@ -34,6 +34,9 @@ export default function DeviceManagement({ employees }: DeviceManagementProps) {
     pixel: 0
   });
 
+  const [deviceTypeFilter, setDeviceTypeFilter] = useState<string | null>(null);
+  const [selectedDeviceIds, setSelectedDeviceIds] = useState<string[]>([]);
+
   useEffect(() => {
     const q = query(collection(db, 'devices'), orderBy('updatedAt', 'desc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -50,6 +53,38 @@ export default function DeviceManagement({ employees }: DeviceManagementProps) {
 
     return () => unsubscribe();
   }, []);
+
+  const handleBatchDelete = async () => {
+    if (selectedDeviceIds.length === 0) return;
+    if (!window.confirm(`Are you sure you want to delete ${selectedDeviceIds.length} selected devices?`)) return;
+    
+    setLoading(true);
+    try {
+      for (const id of selectedDeviceIds) {
+        await deleteDoc(doc(db, 'devices', id));
+      }
+      setSelectedDeviceIds([]);
+      alert(`Successfully deleted ${selectedDeviceIds.length} devices.`);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, 'devices/batch');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedDeviceIds.length === filteredDevices.length) {
+      setSelectedDeviceIds([]);
+    } else {
+      setSelectedDeviceIds(filteredDevices.map(d => d.id));
+    }
+  };
+
+  const toggleSelectDevice = (id: string) => {
+    setSelectedDeviceIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -140,11 +175,15 @@ export default function DeviceManagement({ employees }: DeviceManagementProps) {
     });
   };
 
-  const filteredDevices = devices.filter(d => 
-    d.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    d.serialNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    d.type.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredDevices = devices.filter(d => {
+    const matchesSearch = d.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      d.serialNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      d.type.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesType = !deviceTypeFilter || d.type.toLowerCase().includes(deviceTypeFilter.toLowerCase());
+    
+    return matchesSearch && matchesType;
+  });
 
   const getDeviceIcon = (type: string) => {
     const t = type.toLowerCase();
@@ -195,50 +234,62 @@ export default function DeviceManagement({ employees }: DeviceManagementProps) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-[8px] border border-[#E2E8F0] shadow-sm flex items-center gap-4">
+        <button 
+          onClick={() => setDeviceTypeFilter(deviceTypeFilter === 'mac' ? null : 'mac')}
+          className={`bg-white p-4 rounded-[8px] border shadow-sm flex items-center gap-4 transition-all ${deviceTypeFilter === 'mac' ? 'border-[#4A90E2] ring-1 ring-[#4A90E2]' : 'border-[#E2E8F0]'}`}
+        >
           <div className="w-10 h-10 rounded-full bg-[#EBF4FF] flex items-center justify-center text-[#2B6CB0]">
             <Laptop className="w-5 h-5" />
           </div>
-          <div>
+          <div className="text-left">
             <div className="text-[11px] text-[#718096] uppercase font-bold tracking-wider mb-0.5">Mac</div>
             <div className="text-[20px] font-bold text-[#1A2233]">
               {devices.filter(d => d.type.toLowerCase() === 'mac').length}
             </div>
           </div>
-        </div>
-        <div className="bg-white p-4 rounded-[8px] border border-[#E2E8F0] shadow-sm flex items-center gap-4">
+        </button>
+        <button 
+          onClick={() => setDeviceTypeFilter(deviceTypeFilter === 'laptop' ? null : 'laptop')}
+          className={`bg-white p-4 rounded-[8px] border shadow-sm flex items-center gap-4 transition-all ${deviceTypeFilter === 'laptop' ? 'border-[#4A90E2] ring-1 ring-[#4A90E2]' : 'border-[#E2E8F0]'}`}
+        >
           <div className="w-10 h-10 rounded-full bg-[#EBF4FF] flex items-center justify-center text-[#2B6CB0]">
             <Monitor className="w-5 h-5" />
           </div>
-          <div>
+          <div className="text-left">
             <div className="text-[11px] text-[#718096] uppercase font-bold tracking-wider mb-0.5">Laptop</div>
             <div className="text-[20px] font-bold text-[#1A2233]">
               {devices.filter(d => d.type.toLowerCase() === 'laptop').length}
             </div>
           </div>
-        </div>
-        <div className="bg-white p-4 rounded-[8px] border border-[#E2E8F0] shadow-sm flex items-center gap-4">
+        </button>
+        <button 
+          onClick={() => setDeviceTypeFilter(deviceTypeFilter === 'iphone' ? null : 'iphone')}
+          className={`bg-white p-4 rounded-[8px] border shadow-sm flex items-center gap-4 transition-all ${deviceTypeFilter === 'iphone' ? 'border-[#4A90E2] ring-1 ring-[#4A90E2]' : 'border-[#E2E8F0]'}`}
+        >
           <div className="w-10 h-10 rounded-full bg-[#F3F4F6] flex items-center justify-center text-[#4A5568]">
             <Smartphone className="w-5 h-5" />
           </div>
-          <div>
+          <div className="text-left">
             <div className="text-[11px] text-[#718096] uppercase font-bold tracking-wider mb-0.5">iPhone</div>
             <div className="text-[20px] font-bold text-[#1A2233]">
               {devices.filter(d => d.type.toLowerCase() === 'iphone').length}
             </div>
           </div>
-        </div>
-        <div className="bg-white p-4 rounded-[8px] border border-[#E2E8F0] shadow-sm flex items-center gap-4">
+        </button>
+        <button 
+          onClick={() => setDeviceTypeFilter(deviceTypeFilter === 'pixel' ? null : 'pixel')}
+          className={`bg-white p-4 rounded-[8px] border shadow-sm flex items-center gap-4 transition-all ${deviceTypeFilter === 'pixel' ? 'border-[#4A90E2] ring-1 ring-[#4A90E2]' : 'border-[#E2E8F0]'}`}
+        >
           <div className="w-10 h-10 rounded-full bg-[#F3F4F6] flex items-center justify-center text-[#4A5568]">
             <Smartphone className="w-5 h-5" />
           </div>
-          <div>
+          <div className="text-left">
             <div className="text-[11px] text-[#718096] uppercase font-bold tracking-wider mb-0.5">Pixel</div>
             <div className="text-[20px] font-bold text-[#1A2233]">
               {devices.filter(d => d.type.toLowerCase().includes('pixel')).length}
             </div>
           </div>
-        </div>
+        </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -261,8 +312,8 @@ export default function DeviceManagement({ employees }: DeviceManagementProps) {
       </div>
 
       <div className="bg-white rounded-[8px] border border-[#E2E8F0] shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-[#E2E8F0]">
-          <div className="relative">
+        <div className="p-4 border-b border-[#E2E8F0] flex flex-col md:flex-row gap-4 items-center">
+          <div className="relative flex-1 w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A0AEC0]" />
             <input 
               type="text"
@@ -272,12 +323,51 @@ export default function DeviceManagement({ employees }: DeviceManagementProps) {
               className="w-full pl-10 pr-4 py-2 border border-[#E2E8F0] rounded-[6px] text-[14px] bg-[#F7FAFC] focus:outline-none focus:ring-1 focus:ring-[#4A90E2]"
             />
           </div>
+          
+          <AnimatePresence>
+            {selectedDeviceIds.length > 0 && (
+              <motion.div 
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                className="flex items-center gap-3 bg-[#FFF5F5] border border-[#FEB2B2] px-3 py-1.5 rounded-[6px]"
+              >
+                <span className="text-[13px] font-medium text-[#C53030]">
+                  {selectedDeviceIds.length} selected
+                </span>
+                <button 
+                  onClick={handleBatchDelete}
+                  className="flex items-center gap-1.5 bg-[#C53030] hover:bg-[#9B2C2C] text-white px-3 py-1 rounded-[4px] text-[12px] font-medium transition-colors"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  Delete
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {(deviceTypeFilter || searchTerm) && (
+            <button 
+              onClick={() => { setDeviceTypeFilter(null); setSearchTerm(''); }}
+              className="text-[12px] text-[#4A90E2] hover:underline"
+            >
+              Clear Filters
+            </button>
+          )}
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-[#F8FAFC]">
+                <th className="px-6 py-4 w-10">
+                  <input 
+                    type="checkbox"
+                    checked={filteredDevices.length > 0 && selectedDeviceIds.length === filteredDevices.length}
+                    onChange={toggleSelectAll}
+                    className="rounded border-[#E2E8F0] text-[#4A90E2] focus:ring-[#4A90E2]"
+                  />
+                </th>
                 <th className="px-6 py-4 text-[12px] font-bold text-[#718096] uppercase tracking-wider">Device</th>
                 <th className="px-6 py-4 text-[12px] font-bold text-[#718096] uppercase tracking-wider">Status</th>
                 <th className="px-6 py-4 text-[12px] font-bold text-[#718096] uppercase tracking-wider">Assigned To</th>
@@ -289,7 +379,15 @@ export default function DeviceManagement({ employees }: DeviceManagementProps) {
               {filteredDevices.map((device) => {
                 const assignedEmployee = employees.find(e => e.id === device.assignedTo);
                 return (
-                  <tr key={device.id} className="hover:bg-[#F8FAFC] transition-colors">
+                  <tr key={device.id} className={`hover:bg-[#F8FAFC] transition-colors ${selectedDeviceIds.includes(device.id) ? 'bg-[#EBF4FF]' : ''}`}>
+                    <td className="px-6 py-4">
+                      <input 
+                        type="checkbox"
+                        checked={selectedDeviceIds.includes(device.id)}
+                        onChange={() => toggleSelectDevice(device.id)}
+                        className="rounded border-[#E2E8F0] text-[#4A90E2] focus:ring-[#4A90E2]"
+                      />
+                    </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-[#EDF2F7] flex items-center justify-center text-[#4A5568]">
