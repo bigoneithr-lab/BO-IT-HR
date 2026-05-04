@@ -79,5 +79,9 @@ service cloud.firestore {
     match /devices/{deviceId} {
       allow read, write: if isApproved();
     }
+
+    match /loans/{loanId} {
+      allow read, write: if isAdmin();
+    }
   }
 }

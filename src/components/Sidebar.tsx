@@ -1,9 +1,9 @@
-import { Users, LayoutDashboard, Settings as SettingsIcon, Building2, LogOut, KeyRound, Calendar, Sparkles, ClipboardList, Banknote, Target, FolderLock, Clock, X, Monitor } from 'lucide-react';
+import { Users, LayoutDashboard, Settings as SettingsIcon, Building2, LogOut, KeyRound, Calendar, Sparkles, ClipboardList, Banknote, Target, FolderLock, Clock, X, Monitor, Wallet } from 'lucide-react';
 import { CompanySettings } from '../types';
 
 interface SidebarProps {
-  currentView: 'dashboard' | 'employees' | 'access-requests' | 'profile' | 'time-off' | 'departments' | 'ai-assistant' | 'recruitment' | 'settings' | 'payroll' | 'performance' | 'documents' | 'attendance' | 'devices';
-  onViewChange: (view: 'dashboard' | 'employees' | 'access-requests' | 'time-off' | 'departments' | 'ai-assistant' | 'recruitment' | 'settings' | 'payroll' | 'performance' | 'documents' | 'attendance' | 'devices') => void;
+  currentView: 'dashboard' | 'employees' | 'access-requests' | 'profile' | 'time-off' | 'departments' | 'ai-assistant' | 'recruitment' | 'settings' | 'payroll' | 'performance' | 'documents' | 'attendance' | 'devices' | 'loans';
+  onViewChange: (view: 'dashboard' | 'employees' | 'access-requests' | 'time-off' | 'departments' | 'ai-assistant' | 'recruitment' | 'settings' | 'payroll' | 'performance' | 'documents' | 'attendance' | 'devices' | 'loans') => void;
   onLogout: () => void;
   userRole: 'admin' | 'manager' | 'employee';
   settings: CompanySettings | null;
@@ -20,6 +20,7 @@ export default function Sidebar({ currentView, onViewChange, onLogout, userRole,
     { id: 'recruitment', label: 'Recruitment', icon: ClipboardList, roles: ['admin', 'manager'] as string[] },
     { id: 'time-off', label: 'Time-Off', icon: Calendar, roles: ['admin', 'manager', 'employee'] as string[] },
     { id: 'payroll', label: 'Payroll', icon: Banknote, roles: ['admin', 'manager', 'employee'] as string[] },
+    { id: 'loans', label: 'Loans', icon: Wallet, roles: ['admin'] as string[] },
     { id: 'performance', label: 'Performance', icon: Target, roles: ['admin', 'manager', 'employee'] as string[] },
     { id: 'documents', label: 'Document Vault', icon: FolderLock, roles: ['admin', 'manager', 'employee'] as string[] },
     { id: 'departments', label: 'Departments', icon: Building2, roles: ['admin', 'manager'] as string[] },

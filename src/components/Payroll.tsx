@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Banknote, Plus, Check, X, FileText, AlertTriangle, Download } from 'lucide-react';
-import { collection, onSnapshot, addDoc, updateDoc, doc, query, orderBy, where, getDocs } from 'firebase/firestore';
+import { Banknote, Plus, Check, X, FileText, AlertTriangle, Download, History } from 'lucide-react';
+import { collection, onSnapshot, addDoc, updateDoc, doc, query, orderBy, where, getDocs, deleteDoc } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { handleFirestoreError, OperationType } from '../lib/firebase-utils';
-import { Employee, Payslip, CompanySettings } from '../types';
+import { Employee, Payslip, CompanySettings, Loan } from '../types';
 
 interface PayrollProps {
   employees: Employee[];
@@ -15,6 +15,7 @@ interface PayrollProps {
 
 export default function Payroll({ employees, isAdmin, settings, currentUserEmail }: PayrollProps) {
   const [payslips, setPayslips] = useState<Payslip[]>([]);
+  const [loans, setLoans] = useState<Loan[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     employeeId: '',
@@ -27,7 +28,21 @@ export default function Payroll({ employees, isAdmin, settings, currentUserEmail
     hasDressCodeBonus: true,
     teamSales: 0,
     ownSales: 0,
+    loanInstallment: 0
   });
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    const q = query(collection(db, 'loans'), orderBy('updatedAt', 'desc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data: Loan[] = [];
+      snapshot.forEach(doc => data.push({ id: doc.id, ...doc.data() } as Loan));
+      setLoans(data);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'loans');
+    });
+    return () => unsubscribe();
+  }, [isAdmin]);
 
   useEffect(() => {
     const fetchAttendance = async () => {
@@ -67,13 +82,17 @@ export default function Payroll({ employees, isAdmin, settings, currentUserEmail
           }
         });
         
+        // Find active loan for this employee
+        const activeLoan = loans.find(l => l.employeeId === formData.employeeId && l.status === 'Active');
+        
         setFormData(prev => ({
           ...prev,
           absentDays: absences,
           leaveDays: leaves,
           lateDaysCount: lateDaysCount,
           totalWorkingDays: totalWorkingDays,
-          hasAttendanceBonus: absences === 0 && leaves === 0
+          hasAttendanceBonus: absences === 0 && leaves === 0,
+          loanInstallment: activeLoan ? activeLoan.monthlyInstallment : 0
         }));
       } catch (error) {
         console.error("Error fetching attendance for payroll", error);
@@ -81,7 +100,7 @@ export default function Payroll({ employees, isAdmin, settings, currentUserEmail
     };
 
     fetchAttendance();
-  }, [formData.employeeId, formData.month]);
+  }, [formData.employeeId, formData.month, loans]);
 
   useEffect(() => {
     const q = query(collection(db, 'payslips'), orderBy('month', 'desc'));
@@ -149,7 +168,8 @@ export default function Payroll({ employees, isAdmin, settings, currentUserEmail
       absenceDays: formData.absentDays || 0,
       lateDays: formData.lateDaysCount || 0,
       latePenaltyDays: penaltyDays,
-      lateDeduction: Math.round(penaltyDays * deductionPerDay)
+      lateDeduction: Math.round(penaltyDays * deductionPerDay),
+      loanInstallment: formData.loanInstallment || 0
     };
 
     if (isManager) {
@@ -163,13 +183,8 @@ export default function Payroll({ employees, isAdmin, settings, currentUserEmail
       if (!isProbation) allowances.dinner = 2000;
     }
 
-    if (isProbation && formData.absentDays > 0) {
-      // In probation, we already calculated baseSalary based on attendance
-      // So no need to double deduct absences here.
-    }
-
     const totalAllowances = Object.values(allowances).reduce((a, b) => a + b, 0);
-    const totalDeductions = deductions.absences + deductions.lateDeduction;
+    const totalDeductions = deductions.absences + deductions.lateDeduction + deductions.loanInstallment;
     const netSalary = Math.max(0, baseSalary + totalAllowances - totalDeductions);
 
     return { baseSalary, allowances, deductions, netSalary, joinedMidMonth, workedDaysThisMonth };
@@ -191,6 +206,7 @@ export default function Payroll({ employees, isAdmin, settings, currentUserEmail
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const selectedEmployee = employees.find(e => e.id === formData.employeeId);
     if (!selectedEmployee || !isAdmin) return;
 
     const calculation = calculateSalary();
@@ -208,6 +224,20 @@ export default function Payroll({ employees, isAdmin, settings, currentUserEmail
         generatedAt: new Date().toISOString(),
         generatedBy: auth.currentUser?.email || 'System'
       });
+
+      // If there's a loan installment, update the loan record
+      const activeLoan = loans.find(l => l.employeeId === selectedEmployee.id && l.status === 'Active');
+      if (activeLoan && calculation.deductions.loanInstallment > 0) {
+        const newRepaid = activeLoan.totalRepaid + calculation.deductions.loanInstallment;
+        const newBalance = Math.max(0, activeLoan.totalAmount - newRepaid);
+        await updateDoc(doc(db, 'loans', activeLoan.id), {
+          totalRepaid: newRepaid,
+          remainingBalance: newBalance,
+          status: newBalance <= 0 ? 'Completed' : 'Active',
+          updatedAt: new Date().toISOString()
+        });
+      }
+
       setIsModalOpen(false);
       setFormData({
         employeeId: '',
@@ -220,6 +250,7 @@ export default function Payroll({ employees, isAdmin, settings, currentUserEmail
         hasDressCodeBonus: true,
         teamSales: 0,
         ownSales: 0,
+        loanInstallment: 0
       });
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, 'payslips');
@@ -255,103 +286,116 @@ export default function Payroll({ employees, isAdmin, settings, currentUserEmail
           <h1 className="text-[20px] md:text-[24px] font-bold text-[#333]">Payroll & Salary</h1>
           <p className="text-[13px] md:text-[14px] text-[#718096] mt-1">Manage employee payslips and salary calculations.</p>
         </div>
-        {isAdmin && (
-          <button 
-            onClick={() => setIsModalOpen(true)}
-            className="bg-[#4A90E2] hover:bg-[#3A80D2] text-white px-4 py-2 rounded-[4px] text-[14px] font-medium flex items-center justify-center gap-2 transition-colors w-full sm:w-auto"
-          >
-            <Plus className="w-4 h-4" />
-            Generate Payslip
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          {isAdmin && (
+            <button 
+              onClick={() => setIsModalOpen(true)}
+              className="bg-[#4A90E2] hover:bg-[#3A80D2] text-white px-4 py-2 rounded-[4px] text-[14px] font-medium flex items-center justify-center gap-2 transition-colors w-full sm:w-auto shadow-sm"
+            >
+              <Plus className="w-4 h-4" />
+              Generate Payslip
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="bg-[#FFFFFF] rounded-[8px] shadow-[0_1px_3px_rgba(0,0,0,0.1)] flex-1 overflow-hidden">
         <div className="overflow-x-auto h-full">
           <table className="w-full text-left border-collapse min-w-[800px]">
-            <thead className="bg-[#FAFBFC] sticky top-0 z-10">
-              <tr>
-                <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5]">Month</th>
-                <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5]">Employee</th>
-                <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5]">Base Salary</th>
-                <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5]">Net Salary</th>
-                <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5]">Status</th>
-                {isAdmin && <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5] text-right">Actions</th>}
-              </tr>
-            </thead>
-            <tbody className="bg-white">
-              {(isAdmin ? payslips : payslips.filter(slip => {
-                const emp = employees.find(e => e.id === slip.employeeId);
-                return emp?.email === currentUserEmail;
-              })).map(slip => {
-                const emp = employees.find(e => e.id === slip.employeeId);
-                return (
-                  <tr key={slip.id} className="hover:bg-[#FAFBFC] transition-colors">
-                    <td className="px-6 py-4 border-b border-[#F0F2F5]">
-                      <div className="text-[14px] text-[#333] font-medium">
-                        {new Date(slip.month + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 border-b border-[#F0F2F5]">
-                      {emp ? (
-                        <div className="flex items-center gap-3">
-                          <img src={emp.avatarUrl} alt="" className="w-8 h-8 rounded-full bg-[#E2E8F0] object-cover" />
-                          <div>
-                            <div className="font-medium text-[14px] text-[#333]">{emp.firstName} {emp.lastName}</div>
-                            <div className="text-[12px] text-[#718096]">{emp.role}</div>
-                          </div>
+              <thead className="bg-[#FAFBFC] sticky top-0 z-10">
+                <tr>
+                  <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5]">Month</th>
+                  <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5]">Employee</th>
+                  <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5]">Base Salary</th>
+                  <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5]">Deductions</th>
+                  <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5]">Net Salary</th>
+                  <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5]">Status</th>
+                  {isAdmin && <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5] text-right">Actions</th>}
+                </tr>
+              </thead>
+              <tbody className="bg-white">
+                {(isAdmin ? payslips : payslips.filter(slip => {
+                  const emp = employees.find(e => e.id === slip.employeeId);
+                  return emp?.email === currentUserEmail;
+                })).map(slip => {
+                  const emp = employees.find(e => e.id === slip.employeeId);
+                  const totalDeductions = (slip.deductions.absences || 0) + (slip.deductions.lateDeduction || 0) + (slip.deductions.loanInstallment || 0);
+                  
+                  return (
+                    <tr key={slip.id} className="hover:bg-[#FAFBFC] transition-colors">
+                      <td className="px-6 py-4 border-b border-[#F0F2F5]">
+                        <div className="text-[14px] text-[#333] font-medium">
+                          {new Date(slip.month + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                         </div>
-                      ) : (
-                        <span className="text-[14px] text-[#718096]">Unknown Employee</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 border-b border-[#F0F2F5]">
-                      <div className="text-[14px] text-[#718096]">{formatCurrency(slip.baseSalary)}</div>
-                    </td>
-                    <td className="px-6 py-4 border-b border-[#F0F2F5]">
-                      <div className="text-[14px] text-[#333] font-bold">{formatCurrency(slip.netSalary)}</div>
-                    </td>
-                    <td className="px-6 py-4 border-b border-[#F0F2F5]">
-                      {slip.status === 'Paid' ? (
-                        <div className="flex flex-col gap-1">
-                          <span className="px-[10px] py-[4px] inline-flex self-start text-[11px] font-semibold rounded-[12px] uppercase bg-[#E6FFFA] text-[#2C7A7B]">Paid</span>
-                          {slip.paymentDate && (
-                            <div className="text-[10px] text-[#718096]">
-                              {new Date(slip.paymentDate).toLocaleDateString()} by {slip.paidBy?.split('@')[0]}
+                      </td>
+                      <td className="px-6 py-4 border-b border-[#F0F2F5]">
+                        {emp ? (
+                          <div className="flex items-center gap-3">
+                            <img src={emp.avatarUrl} alt="" className="w-8 h-8 rounded-full bg-[#E2E8F0] object-cover" />
+                            <div>
+                              <div className="font-medium text-[14px] text-[#333]">{emp.firstName} {emp.lastName}</div>
+                              <div className="text-[12px] text-[#718096]">{emp.role}</div>
                             </div>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="px-[10px] py-[4px] inline-flex text-[11px] font-semibold rounded-[12px] uppercase bg-[#EDF2F7] text-[#4A5568]">Draft</span>
-                      )}
-                    </td>
-                    {isAdmin && (
-                      <td className="px-6 py-4 border-b border-[#F0F2F5] text-right">
-                        {slip.status === 'Draft' && (
-                          <button 
-                            onClick={() => handleStatusUpdate(slip.id, 'Paid')}
-                            className="text-[13px] text-[#4A90E2] hover:text-[#3A80D2] font-medium transition-colors"
-                          >
-                            Mark as Paid
-                          </button>
+                          </div>
+                        ) : (
+                          <span className="text-[14px] text-[#718096]">Unknown Employee</span>
                         )}
                       </td>
-                    )}
+                      <td className="px-6 py-4 border-b border-[#F0F2F5]">
+                        <div className="text-[14px] text-[#718096]">{formatCurrency(slip.baseSalary)}</div>
+                      </td>
+                      <td className="px-6 py-4 border-b border-[#F0F2F5]">
+                        <div className="flex flex-col">
+                          <span className="text-[14px] text-[#C53030] font-medium">-{formatCurrency(totalDeductions)}</span>
+                          {slip.deductions.loanInstallment && slip.deductions.loanInstallment > 0 && (
+                            <span className="text-[10px] text-[#718096]">Incl. Loan: {formatCurrency(slip.deductions.loanInstallment)}</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 border-b border-[#F0F2F5]">
+                        <div className="text-[14px] text-[#333] font-bold">{formatCurrency(slip.netSalary)}</div>
+                      </td>
+                      <td className="px-6 py-4 border-b border-[#F0F2F5]">
+                        {slip.status === 'Paid' ? (
+                          <div className="flex flex-col gap-1">
+                            <span className="px-[10px] py-[4px] inline-flex self-start text-[11px] font-semibold rounded-[12px] uppercase bg-[#E6FFFA] text-[#2C7A7B]">Paid</span>
+                            {slip.paymentDate && (
+                              <div className="text-[10px] text-[#718096]">
+                                {new Date(slip.paymentDate).toLocaleDateString()} by {slip.paidBy?.split('@')[0]}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="px-[10px] py-[4px] inline-flex text-[11px] font-semibold rounded-[12px] uppercase bg-[#EDF2F7] text-[#4A5568]">Draft</span>
+                        )}
+                      </td>
+                      {isAdmin && (
+                        <td className="px-6 py-4 border-b border-[#F0F2F5] text-right">
+                          {slip.status === 'Draft' && (
+                            <button 
+                              onClick={() => handleStatusUpdate(slip.id, 'Paid')}
+                              className="text-[13px] text-[#4A90E2] hover:text-[#3A80D2] font-medium transition-colors"
+                            >
+                              Mark as Paid
+                            </button>
+                          )}
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })}
+                {payslips.length === 0 && (
+                  <tr>
+                    <td colSpan={isAdmin ? 7 : 6} className="px-6 py-16 text-center text-[#718096]">
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <Banknote className="w-8 h-8 text-[#A0AEC0] mb-2" />
+                        <p className="text-[14px]">No payslips generated yet.</p>
+                      </div>
+                    </td>
                   </tr>
-                );
-              })}
-              {payslips.length === 0 && (
-                <tr>
-                  <td colSpan={isAdmin ? 6 : 5} className="px-6 py-16 text-center text-[#718096]">
-                    <div className="flex flex-col items-center justify-center gap-2">
-                      <Banknote className="w-8 h-8 text-[#A0AEC0] mb-2" />
-                      <p className="text-[14px]">No payslips generated yet.</p>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                )}
+              </tbody>
+            </table>
         </div>
       </div>
 
@@ -564,50 +608,43 @@ export default function Payroll({ employees, isAdmin, settings, currentUserEmail
                                   <AlertTriangle className="w-4 h-4 text-[#C53030]" />
                                   <span className="text-[13px] font-medium text-[#C53030]">Probation Period Active</span>
                                 </div>
-                                <label className="flex items-center gap-2 text-[12px] font-medium text-[#718096] uppercase tracking-[0.5px] mb-1">
-                                  Unpaid Absences (Days)
-                                  <span className="bg-[#EBF4FF] text-[#2B6CB0] px-1.5 py-0.5 rounded text-[10px] normal-case tracking-normal">Auto-calculated</span>
-                                </label>
-                                <div className="flex items-center gap-3">
-                                  <input 
-                                    type="number" 
-                                    min="0"
-                                    max="31"
-                                    step="0.5"
-                                    value={formData.absentDays}
-                                    onChange={e => setFormData({...formData, absentDays: parseFloat(e.target.value) || 0})}
-                                    className="w-32 px-3 py-2 border border-[#E2E8F0] rounded-[4px] bg-white text-[14px] focus:outline-none focus:ring-1 focus:ring-[#4A90E2] transition-colors"
-                                  />
-                                  <span className="text-[13px] text-[#718096]">
-                                    Deduction: {formatCurrency((17000 / 30) * formData.absentDays)}
-                                  </span>
-                                </div>
+                                <div className="text-[12px] text-[#718096] mb-2 italic">Salary is calculated based on total working days.</div>
                               </div>
                             )}
                           </div>
                         </>
                       )}
 
-                      {formData.lateDaysCount > 0 && (
-                        <div className="pt-3 border-t border-[#E2E8F0]">
-                          <label className="flex items-center gap-2 text-[12px] font-medium text-[#718096] uppercase tracking-[0.5px] mb-1">
-                            Late Arrivals ({formData.lateDaysCount} days)
-                            <span className="bg-[#EBF4FF] text-[#2B6CB0] px-1.5 py-0.5 rounded text-[10px] normal-case tracking-normal">Auto-calculated</span>
-                          </label>
-                          <div className="flex items-center justify-between">
-                            <span className="text-[14px] text-[#333]">
-                              {formData.lateDaysCount >= 3 ? `Penalty: ${formData.lateDaysCount - 2} day(s) salary cut` : 'No penalty (< 3 days)'}
-                            </span>
-                            <span className="text-[14px] font-medium text-[#C53030]">
-                              - {formatCurrency(currentCalc?.deductions.lateDeduction || 0)}
-                            </span>
-                          </div>
-                          {formData.lateDaysCount >= 7 && (
-                            <div className="mt-3 bg-[#FFF5F5] border border-[#FC8181] text-[#C53030] p-3 rounded-[4px] flex items-start gap-2">
-                              <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
-                              <div className="text-[13px]">
-                                <strong className="block font-bold mb-0.5">Termination Warning</strong>
-                                Employee has been late {formData.lateDaysCount} days this month. According to policy, 7 or more days late results in termination.
+                      {(formData.lateDaysCount > 0 || formData.loanInstallment > 0) && (
+                        <div className="pt-3 border-t border-[#E2E8F0] space-y-3">
+                          {formData.lateDaysCount > 0 && (
+                            <div>
+                              <label className="flex items-center gap-2 text-[12px] font-medium text-[#718096] uppercase tracking-[0.5px] mb-1">
+                                Late Arrivals ({formData.lateDaysCount} days)
+                                <span className="bg-[#EBF4FF] text-[#2B6CB0] px-1.5 py-0.5 rounded text-[10px] normal-case tracking-normal">Auto</span>
+                              </label>
+                              <div className="flex items-center justify-between">
+                                <span className="text-[14px] text-[#333]">
+                                  {formData.lateDaysCount >= 3 ? `Penalty: ${formData.lateDaysCount - 2} day(s) salary cut` : 'No penalty (< 3 days)'}
+                                </span>
+                                <span className="text-[14px] font-medium text-[#C53030]">
+                                  - {formatCurrency(currentCalc?.deductions.lateDeduction || 0)}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {formData.loanInstallment > 0 && (
+                            <div>
+                              <label className="flex items-center gap-2 text-[12px] font-medium text-[#718096] uppercase tracking-[0.5px] mb-1">
+                                Loan Installment
+                                <span className="bg-[#EBF4FF] text-[#2B6CB0] px-1.5 py-0.5 rounded text-[10px] normal-case tracking-normal">Active</span>
+                              </label>
+                              <div className="flex items-center justify-between">
+                                <span className="text-[14px] text-[#333]">Monthly loan repayment</span>
+                                <span className="text-[14px] font-medium text-[#C53030]">
+                                  - {formatCurrency(formData.loanInstallment)}
+                                </span>
                               </div>
                             </div>
                           )}

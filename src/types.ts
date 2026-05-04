@@ -108,6 +108,7 @@ export interface Payslip {
     lateDays?: number;
     latePenaltyDays?: number;
     lateDeduction?: number;
+    loanInstallment?: number;
   };
   netSalary: number;
   status: 'Draft' | 'Paid';
@@ -115,6 +116,19 @@ export interface Payslip {
   generatedBy: string;
   paymentDate?: string;
   paidBy?: string;
+}
+
+export interface Loan {
+  id: string;
+  employeeId: string;
+  totalAmount: number;
+  monthlyInstallment: number;
+  totalRepaid: number;
+  remainingBalance: number;
+  status: 'Active' | 'Completed';
+  startDate: string;
+  description?: string;
+  updatedAt: string;
 }
 
 export interface Goal {

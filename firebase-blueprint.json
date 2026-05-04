@@ -116,6 +116,23 @@
         "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["name", "type", "updatedBy", "updatedAt"]
+    },
+    "Loan": {
+      "title": "Loan",
+      "description": "Represents an employee loan.",
+      "type": "object",
+      "properties": {
+        "employeeId": { "type": "string" },
+        "totalAmount": { "type": "integer" },
+        "monthlyInstallment": { "type": "integer" },
+        "totalRepaid": { "type": "integer" },
+        "remainingBalance": { "type": "integer" },
+        "status": { "type": "string", "enum": ["Active", "Completed"] },
+        "startDate": { "type": "string", "format": "date" },
+        "description": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["employeeId", "totalAmount", "monthlyInstallment", "totalRepaid", "remainingBalance", "status", "startDate", "updatedAt"]
     }
   },
   "firestore": {
@@ -148,6 +165,12 @@
         "$ref": "#/entities/Applicant"
       },
       "description": "Stores job applicants."
+    },
+    "/loans/{loanId}": {
+      "schema": {
+        "$ref": "#/entities/Loan"
+      },
+      "description": "Stores employee loan records."
     }
   }
 }
