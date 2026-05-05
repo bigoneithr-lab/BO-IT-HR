@@ -61,7 +61,7 @@
         "lastName": { "type": "string" },
         "email": { "type": "string" },
         "role": { "type": "string" },
-        "stage": { "type": "string", "enum": ["Applied", "Interviewing", "Offered", "Hired", "Rejected", "Converted"] },
+        "stage": { "type": "string", "enum": ["Applied", "Interviewing", "Training", "Hired", "Rejected", "Converted"] },
         "appliedDate": { "type": "string", "format": "date" },
         "phone": { "type": "string" },
         "notes": { "type": "string" },

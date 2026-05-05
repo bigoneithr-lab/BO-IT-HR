@@ -13,7 +13,7 @@ interface RecruitmentBoardProps {
   employees: Employee[];
 }
 
-const STAGES: ApplicantStage[] = ['Applied', 'Interviewing', 'Offered', 'Hired', 'Rejected'];
+const STAGES: ApplicantStage[] = ['Applied', 'Interviewing', 'Training', 'Hired', 'Rejected'];
 
 export default function RecruitmentBoard({ applicants, departments, employees }: RecruitmentBoardProps) {
   // Filter out applicants who are already employees
@@ -170,7 +170,7 @@ export default function RecruitmentBoard({ applicants, departments, employees }:
     switch (stage) {
       case 'Applied': return 'border-[#4A90E2]';
       case 'Interviewing': return 'border-[#F5A623]';
-      case 'Offered': return 'border-[#9013FE]';
+      case 'Training': return 'border-[#9013FE]';
       case 'Hired': return 'border-[#48BB78]';
       case 'Rejected': return 'border-[#E53E3E]';
       default: return 'border-[#A0AEC0]';

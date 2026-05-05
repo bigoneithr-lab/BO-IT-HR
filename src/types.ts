@@ -66,7 +66,7 @@ export interface Department {
   managerId?: string;
 }
 
-export type ApplicantStage = 'Applied' | 'Interviewing' | 'Offered' | 'Hired' | 'Rejected' | 'Converted';
+export type ApplicantStage = 'Applied' | 'Interviewing' | 'Training' | 'Hired' | 'Rejected' | 'Converted';
 
 export interface Applicant {
   id: string;
