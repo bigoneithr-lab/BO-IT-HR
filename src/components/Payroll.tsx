@@ -127,7 +127,8 @@ export default function Payroll({ employees, isAdmin, settings, currentUserEmail
   const calculateSalary = () => {
     if (!selectedEmployee) return null;
 
-    const fullBaseSalary = isManager ? 25000 : 17000;
+    // Use employee's specified salary, fallback to role-based default if not set
+    const fullBaseSalary = selectedEmployee.baseSalary || (isManager ? 25000 : 17000);
     
     // Check if joined this month
     const joinDateObj = new Date(selectedEmployee.joinDate);

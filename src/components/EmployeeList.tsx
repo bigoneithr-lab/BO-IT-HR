@@ -113,6 +113,7 @@ export default function EmployeeList({ employees, departments, onViewProfile }: 
                 <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5]">Employee</th>
                 <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5]">Role & Dept</th>
                 <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5]">Status</th>
+                <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5]">Salary</th>
                 <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5]">Joined</th>
                 <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5] text-right">Actions</th>
               </tr>
@@ -145,6 +146,9 @@ export default function EmployeeList({ employees, departments, onViewProfile }: 
                     <span className={`px-[10px] py-[4px] inline-flex text-[11px] leading-none font-semibold rounded-[12px] uppercase ${getStatusColor(employee.status)}`}>
                       {employee.status}
                     </span>
+                  </td>
+                  <td className="px-6 py-4 border-b border-[#F0F2F5] text-[14px] text-[#333] font-medium">
+                    {employee.baseSalary ? new Intl.NumberFormat('en-BD', { style: 'currency', currency: 'BDT', maximumFractionDigits: 0 }).format(employee.baseSalary) : '-'}
                   </td>
                   <td className="px-6 py-4 border-b border-[#F0F2F5] text-[14px] text-[#333]">
                     {new Date(employee.joinDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}

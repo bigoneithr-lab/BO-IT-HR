@@ -41,6 +41,10 @@
           "format": "uri",
           "description": "URL to the employee's avatar image"
         },
+        "baseSalary": {
+          "type": "integer",
+          "description": "The monthly base salary for this employee"
+        },
         "ownerId": {
           "type": "string",
           "description": "The UID of the user who created this record"

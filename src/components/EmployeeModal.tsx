@@ -23,6 +23,7 @@ export default function EmployeeModal({ isOpen, onClose, employee, employees, de
     department: '',
     status: 'Active',
     joinDate: new Date().toISOString().split('T')[0],
+    baseSalary: 17000,
     avatarUrl: `https://ui-avatars.com/api/?name=New+Employee&background=E2E8F0&color=4A5568`
   });
 
@@ -166,6 +167,31 @@ export default function EmployeeModal({ isOpen, onClose, employee, employees, de
                 </select>
               </div>
               <div>
+                <label className="block text-[12px] font-medium text-[#718096] uppercase tracking-[0.5px] mb-1">Base Salary (BDT)</label>
+                <input 
+                  required
+                  type="number" 
+                  min="0"
+                  value={formData.baseSalary || ''}
+                  onChange={e => setFormData({...formData, baseSalary: parseInt(e.target.value) || 0})}
+                  className="w-full px-3 py-2 border border-[#E2E8F0] rounded-[4px] bg-[#F7FAFC] text-[14px] focus:outline-none focus:ring-1 focus:ring-[#4A90E2] focus:border-[#4A90E2] transition-colors font-medium text-[#2D3748]"
+                  placeholder="e.g. 17000"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[12px] font-medium text-[#718096] uppercase tracking-[0.5px] mb-1">Join Date</label>
+                <input 
+                  required
+                  type="date" 
+                  value={formData.joinDate}
+                  onChange={e => setFormData({...formData, joinDate: e.target.value})}
+                  className="w-full px-3 py-2 border border-[#E2E8F0] rounded-[4px] bg-[#F7FAFC] text-[14px] focus:outline-none focus:ring-1 focus:ring-[#4A90E2] focus:border-[#4A90E2] transition-colors"
+                />
+              </div>
+              <div>
                 <label className="block text-[12px] font-medium text-[#718096] uppercase tracking-[0.5px] mb-1">Reference</label>
                 <input 
                   type="text" 
@@ -175,17 +201,6 @@ export default function EmployeeModal({ isOpen, onClose, employee, employees, de
                   placeholder="e.g. Employee Name or Agency"
                 />
               </div>
-            </div>
-
-            <div>
-              <label className="block text-[12px] font-medium text-[#718096] uppercase tracking-[0.5px] mb-1">Join Date</label>
-              <input 
-                required
-                type="date" 
-                value={formData.joinDate}
-                onChange={e => setFormData({...formData, joinDate: e.target.value})}
-                className="w-full px-3 py-2 border border-[#E2E8F0] rounded-[4px] bg-[#F7FAFC] text-[14px] focus:outline-none focus:ring-1 focus:ring-[#4A90E2] focus:border-[#4A90E2] transition-colors"
-              />
             </div>
 
             <div className="pt-4 flex justify-end gap-3 border-t border-[#F0F2F5] mt-6">

@@ -37,6 +37,7 @@ export interface Employee {
   status: EmployeeStatus;
   joinDate: string;
   avatarUrl: string;
+  baseSalary?: number;
   ownerId?: string;
   phone?: string;
   location?: string;

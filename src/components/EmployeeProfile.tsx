@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { ArrowLeft, Mail, Phone, MapPin, Calendar, Briefcase, UserPlus } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, MapPin, Calendar, Briefcase, UserPlus, Banknote } from 'lucide-react';
 import { Employee } from '../types';
 
 interface EmployeeProfileProps {
@@ -68,6 +68,12 @@ export default function EmployeeProfile({ employee, onBack }: EmployeeProfilePro
                 <Calendar className="w-4 h-4" />
                 Joined {new Date(employee.joinDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
               </div>
+              {employee.baseSalary && (
+                <div className="flex items-center gap-2 text-[14px] text-[#2B6CB0] font-bold">
+                  <Banknote className="w-4 h-4" />
+                  {new Intl.NumberFormat('en-BD', { style: 'currency', currency: 'BDT', maximumFractionDigits: 0 }).format(employee.baseSalary)}
+                </div>
+              )}
             </div>
           </div>
         </div>
