@@ -308,6 +308,7 @@ export default function Payroll({ employees, isAdmin, settings, currentUserEmail
                   <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5]">Month</th>
                   <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5]">Employee</th>
                   <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5]">Base Salary</th>
+                  <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5]">Allowances</th>
                   <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5]">Deductions</th>
                   <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5]">Net Salary</th>
                   <th className="px-6 py-3 text-[12px] font-normal text-[#718096] uppercase border-b border-[#F0F2F5]">Status</th>
@@ -321,6 +322,7 @@ export default function Payroll({ employees, isAdmin, settings, currentUserEmail
                 })).map(slip => {
                   const emp = employees.find(e => e.id === slip.employeeId);
                   const totalDeductions = (slip.deductions.absences || 0) + (slip.deductions.lateDeduction || 0) + (slip.deductions.loanInstallment || 0);
+                  const totalAllowances = Object.values(slip.allowances || {}).reduce((a, b) => a + b, 0);
                   
                   return (
                     <tr key={slip.id} className="hover:bg-[#FAFBFC] transition-colors">
@@ -343,7 +345,10 @@ export default function Payroll({ employees, isAdmin, settings, currentUserEmail
                         )}
                       </td>
                       <td className="px-6 py-4 border-b border-[#F0F2F5]">
-                        <div className="text-[14px] text-[#718096]">{formatCurrency(slip.baseSalary)}</div>
+                        <div className="text-[14px] text-[#718096] font-medium">{formatCurrency(slip.baseSalary)}</div>
+                      </td>
+                      <td className="px-6 py-4 border-b border-[#F0F2F5]">
+                        <div className="text-[14px] text-[#38A169] font-medium">+{formatCurrency(totalAllowances)}</div>
                       </td>
                       <td className="px-6 py-4 border-b border-[#F0F2F5]">
                         <div className="flex flex-col">

@@ -23,20 +23,21 @@ interface DashboardProps {
 export default function Dashboard({ employees, departments }: DashboardProps) {
   const activeEmployees = employees.filter(e => e.status === 'Active').length;
   const onLeave = employees.filter(e => e.status === 'On Leave').length;
-  const terminated = employees.filter(e => e.status === 'Terminated').length;
+  const nonTerminatedEmployees = employees.filter(e => e.status !== 'Terminated');
+  const count = nonTerminatedEmployees.length;
 
   const stats = [
-    { label: 'Total Employees', value: employees.length, icon: Users },
+    { label: 'Total Employees', value: count, icon: Users },
     { label: 'Active', value: activeEmployees, icon: UserCheck },
     { label: 'On Leave', value: onLeave, icon: Briefcase },
-    { label: 'Departments', value: departments.length, icon: UserMinus }, // Replaced Terminated with Departments count
+    { label: 'Departments', value: departments.length, icon: UserMinus },
   ];
 
   // Prepare data for Headcount by Department
   const departmentData = departments.map(dept => {
     return {
       name: dept.name,
-      count: employees.filter(e => e.department === dept.name).length
+      count: nonTerminatedEmployees.filter(e => e.department === dept.name).length
     };
   }).filter(d => d.count > 0);
 
@@ -44,7 +45,6 @@ export default function Dashboard({ employees, departments }: DashboardProps) {
   const statusData = [
     { name: 'Active', value: activeEmployees, color: '#4A90E2' },
     { name: 'On Leave', value: onLeave, color: '#F5A623' },
-    { name: 'Terminated', value: terminated, color: '#A0AEC0' }
   ].filter(d => d.value > 0);
 
   return (
@@ -158,7 +158,7 @@ export default function Dashboard({ employees, departments }: DashboardProps) {
               </tr>
             </thead>
             <tbody>
-              {employees.slice(0, 5).map((employee) => (
+              {nonTerminatedEmployees.slice(0, 5).map((employee) => (
                 <tr key={employee.id} className="hover:bg-[#FAFBFC] transition-colors">
                   <td className="px-6 py-4 border-b border-[#F0F2F5] text-[14px]">
                     <div className="flex items-center gap-3">
