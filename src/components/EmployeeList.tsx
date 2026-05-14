@@ -15,14 +15,26 @@ interface EmployeeListProps {
 
 export default function EmployeeList({ employees, departments, onViewProfile }: EmployeeListProps) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedReference, setSelectedReference] = useState('All');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | undefined>();
 
-  const filteredEmployees = employees.filter(emp => 
-    `${emp.firstName} ${emp.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    emp.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    emp.role.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const references = ['All', ...Array.from(new Set(employees.map(emp => emp.reference).filter(Boolean)))];
+
+  const filteredEmployees = employees.filter(emp => {
+    const matchesSearch = `${emp.firstName} ${emp.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      emp.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      emp.role.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesReference = selectedReference === 'All' || emp.reference === selectedReference;
+    
+    return matchesSearch && matchesReference;
+  });
+
+  const getReferenceCount = (ref: string) => {
+    if (ref === 'All') return employees.length;
+    return employees.filter(emp => emp.reference === ref).length;
+  };
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -91,18 +103,32 @@ export default function EmployeeList({ employees, departments, onViewProfile }: 
 
       <div className="bg-[#FFFFFF] rounded-[8px] shadow-[0_1px_3px_rgba(0,0,0,0.1)] flex-1 flex flex-col overflow-hidden">
         <div className="p-4 md:p-5 border-b border-[#F0F2F5] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="relative w-full sm:w-[300px]">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#718096]" />
-            <input 
-              type="text"
-              placeholder="Search employees..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-[#E2E8F0] rounded-[4px] bg-[#F7FAFC] text-[14px] text-[#718096] placeholder-[#718096] focus:outline-none focus:ring-1 focus:ring-[#4A90E2] focus:border-[#4A90E2] transition-colors"
-            />
+          <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
+            <div className="relative w-full sm:w-[250px]">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#718096]" />
+              <input 
+                type="text"
+                placeholder="Search employees..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-[#E2E8F0] rounded-[4px] bg-[#F7FAFC] text-[14px] text-[#718096] placeholder-[#718096] focus:outline-none focus:ring-1 focus:ring-[#4A90E2] focus:border-[#4A90E2] transition-colors"
+              />
+            </div>
+            
+            <select
+              value={selectedReference}
+              onChange={(e) => setSelectedReference(e.target.value)}
+              className="w-full sm:w-[200px] px-3 py-2 border border-[#E2E8F0] rounded-[4px] bg-[#F7FAFC] text-[14px] text-[#2D3748] focus:outline-none focus:ring-1 focus:ring-[#4A90E2] focus:border-[#4A90E2] transition-colors cursor-pointer"
+            >
+              {references.map(ref => (
+                <option key={ref} value={ref}>
+                  {ref === 'All' ? 'All References' : ref} ({getReferenceCount(ref as string)})
+                </option>
+              ))}
+            </select>
           </div>
-          <div className="text-[14px] text-[#718096]">
-            Showing {filteredEmployees.length} employees
+          <div className="text-[14px] text-[#718096] font-medium">
+            Showing <span className="text-[#2D3748]">{filteredEmployees.length}</span> employees
           </div>
         </div>
 
