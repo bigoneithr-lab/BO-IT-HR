@@ -91,10 +91,13 @@ export default function App() {
   const [userRole, setUserRole] = useState<'admin' | 'manager' | 'employee'>('employee');
 
   useEffect(() => {
-    if (userRole === 'employee' && currentView === 'dashboard') {
+    const isHardcodedAdmin = user?.email === 'bigoneithr@gmail.com' || user?.email === 'bigoneit9326@gmail.com';
+    const isRoleResolved = isHardcodedAdmin || (employees.length > 0);
+
+    if (isAuthReady && appUserStatus !== 'loading' && isRoleResolved && userRole === 'employee' && currentView === 'dashboard') {
       setCurrentView('attendance');
     }
-  }, [userRole, currentView]);
+  }, [isAuthReady, appUserStatus, userRole, currentView, user, employees.length]);
 
   useEffect(() => {
     if (!user) return;
