@@ -21,15 +21,16 @@ import DocumentVault from './components/DocumentVault';
 import Attendance from './components/Attendance';
 import DeviceManagement from './components/DeviceManagement';
 import LoanManagement from './components/LoanManagement';
+import NoticeBoard from './components/NoticeBoard';
 import { Employee, Department, Applicant, CompanySettings } from './types';
 
 export default function App() {
-  type ViewType = 'dashboard' | 'employees' | 'access-requests' | 'profile' | 'time-off' | 'departments' | 'ai-assistant' | 'recruitment' | 'settings' | 'payroll' | 'performance' | 'documents' | 'attendance' | 'devices' | 'loans';
+  type ViewType = 'dashboard' | 'employees' | 'access-requests' | 'profile' | 'time-off' | 'departments' | 'ai-assistant' | 'recruitment' | 'settings' | 'payroll' | 'performance' | 'documents' | 'attendance' | 'devices' | 'loans' | 'notices';
 
   const [currentView, setCurrentView] = useState<ViewType>(() => {
     try {
       const hash = window.location.hash.replace('#', '');
-      const validViews = ['dashboard', 'employees', 'access-requests', 'profile', 'time-off', 'departments', 'ai-assistant', 'recruitment', 'settings', 'payroll', 'performance', 'documents', 'attendance', 'devices', 'loans'];
+      const validViews = ['dashboard', 'employees', 'access-requests', 'profile', 'time-off', 'departments', 'ai-assistant', 'recruitment', 'settings', 'payroll', 'performance', 'documents', 'attendance', 'devices', 'loans', 'notices'];
       if (hash && validViews.includes(hash)) {
         return hash as ViewType;
       }
@@ -42,7 +43,7 @@ export default function App() {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.replace('#', '') as ViewType;
-      const validViews = ['dashboard', 'employees', 'access-requests', 'profile', 'time-off', 'departments', 'ai-assistant', 'recruitment', 'settings', 'payroll', 'performance', 'documents', 'attendance', 'devices', 'loans'];
+      const validViews = ['dashboard', 'employees', 'access-requests', 'profile', 'time-off', 'departments', 'ai-assistant', 'recruitment', 'settings', 'payroll', 'performance', 'documents', 'attendance', 'devices', 'loans', 'notices'];
       if (validViews.includes(hash) && hash !== currentView) {
         setCurrentView(hash);
       }
@@ -439,6 +440,13 @@ export default function App() {
           {currentView === 'documents' && <DocumentVault employees={employees} isAdmin={userRole === 'admin' || userRole === 'manager'} currentUserEmail={user?.email} />}
           {currentView === 'attendance' && <Attendance employees={employees} isAdmin={userRole === 'admin' || userRole === 'manager'} settings={companySettings} currentUserEmail={user?.email} />}
           {currentView === 'devices' && (userRole === 'admin' || userRole === 'manager') && <DeviceManagement employees={employees} />}
+          {currentView === 'notices' && (
+            <NoticeBoard 
+              isAdmin={userRole === 'admin' || userRole === 'manager'} 
+              currentUserEmail={user?.email || ''} 
+              currentUserName={user?.displayName || employees.find(e => e.email === user?.email)?.firstName || 'Admin'}
+            />
+          )}
           {currentView === 'profile' && selectedEmployee && (
             <EmployeeProfile 
               employee={selectedEmployee} 

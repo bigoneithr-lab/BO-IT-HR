@@ -1,9 +1,9 @@
-import { Users, LayoutDashboard, Settings as SettingsIcon, Building2, LogOut, KeyRound, Calendar, Sparkles, ClipboardList, Banknote, Target, FolderLock, Clock, X, Monitor, Wallet } from 'lucide-react';
+import { Users, LayoutDashboard, Settings as SettingsIcon, Building2, LogOut, KeyRound, Calendar, Sparkles, ClipboardList, Banknote, Target, FolderLock, Clock, X, Monitor, Wallet, Megaphone } from 'lucide-react';
 import { CompanySettings } from '../types';
 
 interface SidebarProps {
-  currentView: 'dashboard' | 'employees' | 'access-requests' | 'profile' | 'time-off' | 'departments' | 'ai-assistant' | 'recruitment' | 'settings' | 'payroll' | 'performance' | 'documents' | 'attendance' | 'devices' | 'loans';
-  onViewChange: (view: 'dashboard' | 'employees' | 'access-requests' | 'time-off' | 'departments' | 'ai-assistant' | 'recruitment' | 'settings' | 'payroll' | 'performance' | 'documents' | 'attendance' | 'devices' | 'loans') => void;
+  currentView: 'dashboard' | 'employees' | 'access-requests' | 'profile' | 'time-off' | 'departments' | 'ai-assistant' | 'recruitment' | 'settings' | 'payroll' | 'performance' | 'documents' | 'attendance' | 'devices' | 'loans' | 'notices';
+  onViewChange: (view: 'dashboard' | 'employees' | 'access-requests' | 'time-off' | 'departments' | 'ai-assistant' | 'recruitment' | 'settings' | 'payroll' | 'performance' | 'documents' | 'attendance' | 'devices' | 'loans' | 'notices') => void;
   onLogout: () => void;
   userRole: 'admin' | 'manager' | 'employee';
   settings: CompanySettings | null;
@@ -14,6 +14,7 @@ interface SidebarProps {
 export default function Sidebar({ currentView, onViewChange, onLogout, userRole, settings, isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps) {
   const allNavItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin', 'manager'] as string[] },
+    { id: 'notices', label: 'Notice Board', icon: Megaphone, roles: ['admin', 'manager', 'employee'] as string[] },
     { id: 'employees', label: 'Employee Directory', icon: Users, roles: ['admin', 'manager'] as string[] },
     { id: 'attendance', label: 'Attendance', icon: Clock, roles: ['admin', 'manager', 'employee'] as string[] },
     { id: 'devices', label: 'Devices', icon: Monitor, roles: ['admin', 'manager'] as string[] },

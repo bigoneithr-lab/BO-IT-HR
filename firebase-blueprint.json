@@ -137,6 +137,22 @@
         "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["employeeId", "totalAmount", "monthlyInstallment", "totalRepaid", "remainingBalance", "status", "startDate", "updatedAt"]
+    },
+    "Notice": {
+      "title": "Notice",
+      "description": "Represents a public notice or announcement.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "type": { "type": "string", "enum": ["General", "Holiday", "Urgent"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "createdBy": { "type": "string" },
+        "creatorName": { "type": "string" },
+        "isPinned": { "type": "boolean" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "content", "type", "createdAt", "createdBy"]
     }
   },
   "firestore": {
@@ -175,6 +191,12 @@
         "$ref": "#/entities/Loan"
       },
       "description": "Stores employee loan records."
+    },
+    "/notices/{noticeId}": {
+      "schema": {
+        "$ref": "#/entities/Notice"
+      },
+      "description": "Stores public notices and announcements."
     }
   }
 }

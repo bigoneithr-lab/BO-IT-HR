@@ -1,6 +1,9 @@
 import { motion } from 'motion/react';
-import { Users, UserCheck, UserMinus, Briefcase } from 'lucide-react';
+import { Users, UserCheck, UserMinus, Briefcase, Megaphone, Calendar, AlertTriangle } from 'lucide-react';
 import { Employee, Department } from '../types';
+import { useState, useEffect } from 'react';
+import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
+import { db } from '../firebase';
 import {
   BarChart,
   Bar,
@@ -21,7 +24,22 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ employees, departments }: DashboardProps) {
+  const [recentNotices, setRecentNotices] = useState<any[]>([]);
   const activeEmployees = employees.filter(e => e.status === 'Active').length;
+
+  useEffect(() => {
+    const q = query(
+      collection(db, 'notices'), 
+      orderBy('createdAt', 'desc'), 
+      limit(3)
+    );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      setRecentNotices(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const activeEmployeesCount = employees.filter(e => e.status === 'Active').length;
   const onLeave = employees.filter(e => e.status === 'On Leave').length;
   const nonTerminatedEmployees = employees.filter(e => e.status !== 'Terminated');
   const count = nonTerminatedEmployees.length;
@@ -32,6 +50,22 @@ export default function Dashboard({ employees, departments }: DashboardProps) {
     { label: 'On Leave', value: onLeave, icon: Briefcase },
     { label: 'Departments', value: departments.length, icon: UserMinus },
   ];
+
+  const getNoticeIcon = (type: string) => {
+    switch (type) {
+      case 'Holiday': return <Calendar className="w-4 h-4 text-[#4A90E2]" />;
+      case 'Urgent': return <AlertTriangle className="w-4 h-4 text-[#E53E3E]" />;
+      default: return <Megaphone className="w-4 h-4 text-[#38A169]" />;
+    }
+  };
+
+  const getNoticeTheme = (type: string) => {
+    switch (type) {
+      case 'Holiday': return 'bg-[#EBF8FF] text-[#2B6CB0] border-[#BEE3F8]';
+      case 'Urgent': return 'bg-[#FFF5F5] text-[#C53030] border-[#FED7D7]';
+      default: return 'bg-[#F0FFF4] text-[#2F855A] border-[#C6F6D5]';
+    }
+  };
 
   // Prepare data for Headcount by Department
   const departmentData = departments.map(dept => {
@@ -78,9 +112,9 @@ export default function Dashboard({ employees, departments }: DashboardProps) {
         })}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Headcount by Department Chart */}
-        <div className="bg-[#FFFFFF] rounded-[8px] shadow-[0_1px_3px_rgba(0,0,0,0.1)] p-6">
+        <div className="lg:col-span-2 bg-[#FFFFFF] rounded-[8px] shadow-[0_1px_3px_rgba(0,0,0,0.1)] p-6">
           <h2 className="text-[16px] font-semibold text-[#333] mb-6">Headcount by Department</h2>
           <div className="h-[300px]">
             {departmentData.length > 0 ? (
@@ -104,6 +138,50 @@ export default function Dashboard({ employees, departments }: DashboardProps) {
           </div>
         </div>
 
+        {/* Latest Announcements */}
+        <div className="bg-[#FFFFFF] rounded-[8px] shadow-[0_1px_3px_rgba(0,0,0,0.1)] flex flex-col">
+          <div className="p-5 border-b border-[#F0F2F5] flex items-center justify-between">
+            <h2 className="text-[16px] font-semibold text-[#333]">Notice Board</h2>
+            <Megaphone className="w-4 h-4 text-[#718096]" />
+          </div>
+          <div className="p-5 space-y-4 flex-1">
+            {recentNotices.length > 0 ? (
+              recentNotices.map((notice) => (
+                <div key={notice.id} className="p-3 rounded-[6px] border border-[#F0F2F5] hover:border-[#E2E8F0] transition-colors">
+                  <div className="flex items-start gap-3">
+                    <div className={`p-2 rounded-[6px] border ${getNoticeTheme(notice.type)}`}>
+                      {getNoticeIcon(notice.type)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <h4 className="text-[13px] font-semibold text-[#2D3748] truncate">{notice.title}</h4>
+                        {notice.isPinned && (
+                          <span className="flex-shrink-0 text-[10px] bg-[#EBF8FF] text-[#2B6CB0] px-1.5 py-0.5 rounded font-bold uppercase">PIN</span>
+                        )}
+                      </div>
+                      <p className="text-[12px] text-[#718096] line-clamp-2 mt-1 leading-snug">
+                        {notice.content}
+                      </p>
+                      <div className="text-[10px] text-[#A0AEC0] mt-2 flex items-center gap-1">
+                        <span>{notice.createdAt?.toDate().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                        <span>•</span>
+                        <span>{notice.type}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="h-full flex flex-col items-center justify-center text-center py-10">
+                <Megaphone className="w-8 h-8 text-[#E2E8F0] mb-2" />
+                <p className="text-[13px] text-[#A0AEC0]">No recent announcements</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Employee Status Chart */}
         <div className="bg-[#FFFFFF] rounded-[8px] shadow-[0_1px_3px_rgba(0,0,0,0.1)] p-6">
           <h2 className="text-[16px] font-semibold text-[#333] mb-6">Employee Status</h2>
