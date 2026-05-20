@@ -63,7 +63,7 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
-  const [appUserStatus, setAppUserStatus] = useState<'loading' | 'pending' | 'approved' | 'admin'>('loading');
+  const [appUserStatus, setAppUserStatus] = useState<'loading' | 'pending' | 'approved' | 'admin' | 'terminated'>('loading');
   const [accessCodeInput, setAccessCodeInput] = useState('');
   const [codeError, setCodeError] = useState('');
   const [loginEmail, setLoginEmail] = useState('');
@@ -150,10 +150,19 @@ export default function App() {
       collection(db, 'employees'),
       (snapshot) => {
         const emps: Employee[] = [];
+        let isTerminated = false;
         snapshot.forEach((doc) => {
-          emps.push({ id: doc.id, ...doc.data() } as Employee);
+          const emp = { id: doc.id, ...doc.data() } as Employee;
+          emps.push(emp);
+          if (user && emp.email === user.email && emp.status === 'Terminated') {
+            isTerminated = true;
+          }
         });
-        setEmployees(emps);
+        if (isTerminated) {
+          setAppUserStatus('terminated');
+        } else {
+          setEmployees(emps);
+        }
       },
       (error) => {
         handleFirestoreError(error, OperationType.LIST, 'employees');
@@ -387,6 +396,31 @@ export default function App() {
           <button 
             onClick={handleLogout}
             className="text-[13px] text-[#718096] hover:text-[#333] transition-colors"
+          >
+            Sign out and try another account
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (appUserStatus === 'terminated') {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[#F0F2F5] font-sans text-[#333]">
+        <div className="bg-[#FFFFFF] p-8 rounded-[8px] shadow-[0_4px_12px_rgba(0,0,0,0.15)] max-w-md w-full text-center">
+          <div className="w-16 h-16 bg-[#FFF5F5] rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-[#E53E3E]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h1 className="text-[24px] font-bold text-[#2D3748] mb-2">Access Denied</h1>
+          <p className="text-[#E53E3E] font-medium text-[15px] mb-3">Your account is terminated</p>
+          <p className="text-[#718096] mb-6 text-[14px]">
+            Your employee record has been marked as terminated. If you believe this is an error, please contact your administrator.
+          </p>
+          <button 
+            onClick={handleLogout}
+            className="w-full bg-[#4A90E2] hover:bg-[#3A80D2] text-white py-2.5 rounded-[4px] font-medium transition-colors"
           >
             Sign out and try another account
           </button>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { Search, Plus, Edit2, Trash2, Mail, Eye } from 'lucide-react';
-import { collection, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, deleteDoc, doc, query, where, getDocs } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { handleFirestoreError, OperationType } from '../lib/firebase-utils';
 import { Employee, Department } from '../types';
@@ -67,6 +67,19 @@ export default function EmployeeList({ employees, departments, onViewProfile }: 
           ownerId: auth.currentUser?.uid
         });
       }
+
+      // Sync employee status with matching user accounts for login blocking
+      if (emp.email) {
+        const usersRef = collection(db, 'users');
+        const qUsers = query(usersRef, where('email', '==', emp.email));
+        const userSnap = await getDocs(qUsers);
+        userSnap.forEach(async (uDoc) => {
+          await updateDoc(doc(db, 'users', uDoc.id), {
+            status: emp.status === 'Terminated' ? 'terminated' : 'approved'
+          });
+        });
+      }
+
       setIsModalOpen(false);
     } catch (error) {
       handleFirestoreError(error, editingEmployee ? OperationType.UPDATE : OperationType.CREATE, 'employees');
